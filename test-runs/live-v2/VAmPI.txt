@@ -1,0 +1,57 @@
+---CMD LINE OUTPUT---
++ python -m sharley spec --repo VAmPI --out spec.json
+29 requirements (22 observed, 7 inferred), coverage 100.0%, spec b40061791c6f -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live2/VAmPI/spec.json
+exit=0
+
++ python -m sharley bank --spec spec.json --repo VAmPI --workspace impl --stack docker-api --bank-out bank.json
+bank b40061791c6fb532ba9210952724800287cf68968a952aed8030726ccaf25306:0: 24 example tests -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live2/VAmPI/impl, 54 sealed (hidden)
+exit=0
+
++ python fid.py   (do the generated tests call real routes?)
+routes in surface: 14
+v2 ALL tests (78): path literals used 7, real 6, fidelity 86%
+v2 example tests (24): used 6, real 5, fidelity 83%
+v1 baseline example tests (29): used 27, real 2, fidelity 7%
+v2 invented paths (first 12): ['/health']
+
++ python -m sharley spend
+spent $1.2806 of $15.00 cap over 12 calls
+  meta: $0.8163 (2171 in / 15891 out tokens)
+  anthropic: $0.4643 (11568 in / 44121 out tokens)
+
++ requirements (id, category, evidence, text)
+coverage 100.0 assumptions 7
+R1 functional observed - System shall expose DELETE /users/v1/{username} to delete a user by username.
+R2 functional observed - System shall expose GET / as root endpoint.
+R3 functional observed - System shall expose GET /books/v1 to list all books.
+R4 functional observed - System shall expose GET /books/v1/{book_title} to retrieve a book by title.
+R5 functional observed - System shall expose GET /createdb to initialize the database.
+R6 functional observed - System shall expose GET /me to return the current authenticated user.
+R7 functional observed - System shall expose GET /users/v1 to list all users.
+R8 functional observed - System shall expose GET /users/v1/_debug to return debug user listing.
+R9 functional observed - System shall expose GET /users/v1/{username} to retrieve a user by username.
+R10 functional observed - System shall expose POST /books/v1 to add a new book.
+R11 functional observed - System shall expose POST /users/v1/login to authenticate a user and issue a token.
+R12 functional observed - System shall expose POST /users/v1/register to register a new user.
+R13 functional observed - System shall expose PUT /users/v1/{username}/email to update a user's email.
+R14 functional observed - System shall expose PUT /users/v1/{username}/password to update a user's password.
+R15 data observed - System shall persist Book records conforming to Book schema.
+R16 data observed - System shall persist User records conforming to User schema.
+R17 data observed - System shall initialize users store via init_db_users.
+R18 data observed - System shall populate books store via populate_db.
+R19 deployment observed - System shall deploy as Stack docker-api.
+R20 deployment observed - System shall build runtime image FROM python:3.11-alpine as builder.
+R21 deployment observed - System shall set token time-to-live via ENV tokentimetolive=60.
+R22 deployment observed - System shall set ENV vulnerable=1 in container environment.
+R23 security inferred - System shall require a valid auth token to access GET /me.
+R24 security inferred - System shall enforce that DELETE /users/v1/{username} is authorized to the owning user.
+R25 security inferred - System shall enforce that PUT email and password updates require ownership authorization.
+R26 security inferred - System shall validate registration inputs for username, email and password and reject invalid values.
+R27 security inferred - System shall validate book inputs on POST /books/v1 and reject invalid values.
+R28 security inferred - System shall issue auth tokens that expire after the configured tokentimetolive period.
+R29 security inferred - System shall restrict GET /users/v1/_debug to authorized callers only.
+
+---SUMMARY---
+VAmPI, v2 (all fixes, Meta first then Claude fallback). spec exit 0: 29 requirements (22 observed, 7 inferred), coverage 100%. bank exit 0: 78 tests = 24 visible + 54 sealed.
+Route surface: 14 routes (was 0) parsed from the OpenAPI YAML. PATH FIDELITY: 86% of path literals in all tests are real routes (6 of 7); example tests 83%. Same repo before the fix: 7% (2 of 27). The one non-route path is /health, from the deterministic env test.
+Not yet done: the tests were not executed against a running VAmPI (needs flask/connexion in a per-repo runner image).

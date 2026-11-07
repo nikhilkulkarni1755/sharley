@@ -1,0 +1,218 @@
+---CMD LINE OUTPUT---
++ SHARLEY_OFFLINE=1 python -m sharley spec --repo fastapi-realworld-example-app --out spec.json
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/__main__.py", line 5, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/gate/cli.py", line 158, in main
+    return COMMANDS[args.cmd](args, context_factory(env), out)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/gate/cli.py", line 73, in cmd_spec
+    spec = build_spec(ctx.verifier, inp, long_chain=ctx.long_context if ctx.long_context.healthy.get("subq") else None,
+                      repo=ctx.repo)
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/intake/pipeline.py", line 42, in build_spec
+    raw = propose(chain, source, stack, long_chain=long_chain, chunk_chars=chunk_chars)
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/intake/extract.py", line 66, in propose
+    for r in EXTRACT.run(chain, ExtractIn(text=part, stack=stack)).requirements:
+             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/harness/step.py", line 66, in run
+    raise StepFailed(f"step {self.name} failed: " + (" | ".join(errors[-4:]) or "no healthy providers"))
+sharley.harness.step.StepFailed: step extract_requirements failed: no healthy providers
+exit=1
+
++ python det.py fastapi-realworld-example-app   (stack detection, codebase summary, env check)
+files loaded: 124, chars: 353051
+Stack: docker-api
+Routes:
+- DELETE /{comment_id}
+- DELETE /{slug}
+- DELETE /{slug}/favorite
+- DELETE /{username}/follow
+- GET /feed
+- GET /wrong_path/{param}
+- GET /{slug}
+- GET /{username}
+- POST /login
+- POST /{slug}/favorite
+- POST /{username}/follow
+- PUT /{slug}
+Functions:
+- __aenter__
+- __aexit__
+- __call__
+- __init__
+- _get_article_from_db_record
+- _get_authorization_header
+- _get_authorization_header_optional
+- _get_authorization_header_retriever
+- _get_comment_from_db_record
+- _get_connection_from_pool
+- _get_current_user
+- _get_current_user_optional
+- _get_db_pool
+- _get_repo
+- _link_article_with_tags
+- acquire
+- add_article_into_favorites
+- add_article_to_favorites
+- add_tags_to_article
+- add_user_into_followers
+- app
+- authorization_prefix
+- authorized_client
+- change_password
+- check_article_exists
+- check_article_modification_permissions
+- check_comment_modification_permissions
+- check_email_is_taken
+- check_password
+- check_user_can_modify_article
+- check_user_can_modify_comment
+- check_username_is_taken
+- client
+- close
+- close_db_connection
+- configure_logging
+- connect_to_db
+- connection
+- convert_datetime_to_realworld
+- convert_field_to_camel_case
+- create_access_token_for_user
+- create_article
+- create_articles_table
+- create_articles_to_tags_table
+- create_comment_for_article
+- create_commentaries_table
+- create_favorites_table
+- create_followers_to_followings_table
+- create_jwt_token
+- create_new_article
+- create_new_comment
+- create_new_tags
+- create_new_user
+- create_pool
+- create_start_app_handler
+- create_stop_app_handler
+- create_tags_table
+- create_tags_that_dont_exist
+- create_updated_at_trigger
+- create_user
+- create_users_table
+- default_datetime
+- delete_article
+- delete_article_by_slug
+- delete_comment
+- delete_comment_by_id
+- delete_comment_from_article
+- downgrade
+- emit
+- fastapi_kwargs
+- filter_articles
+- follow_for_user
+- generate_salt
+- get_all_tags
+- get_app_settings
+- get_application
+- get_article_by_slug
+- get_article_by_slug_from_path
+- get_articles_filters
+- get_articles_for_feed
+- get_articles_for_user_feed
+- get_comment_by_id
+- get_comment_by_id_and_slug
+- get_comment_by_id_from_path
+- get_comments_for_article
+- get_comments_for_article_by_slug
+- get_current_user_authorizer
+- get_favorites_count_for_article
+- get_favorites_count_for_article_by_slug
+- get_password_hash
+- get_profile_by_username
+- get_profile_by_username_from_path
+- get_repository
+- get_slug_for_article
+- get_tags_for_article_by_slug
+- get_user_by_email
+- get_user_by_username
+- get_username_from_token
+- http422_error_handler
+- http_error_handler
+- initialized_app
+- is_article_favorited_by_user
+- is_article_in_favorites
+- is_user_following_for_another
+- is_user_following_for_another_user
+- list_articles
+- list_comments_for_article
+- login
+- mark_article_as_favorite
+- pool
+- register
+- remove_article_from_favorites
+- remove_user_from_followers
+- retrieve_article_by_slug
+- retrieve_current_user
+- retrieve_profile_by_username
+- route_for_test
+- run_migrations_online
+- start_app
+- stop_app
+- subscribe_user_to_another
+- test_api_datetime_is_in_realworld_format
+- test_article
+- test_article_will_contain_only_attached_tags
+- test_creating_jwt_token
+- test_creating_token_for_user
+- test_empty_feed_if_user_has_not_followings
+- test_empty_list_when_no_tags_exist
+- test_error_when_wrong_token
+- test_error_when_wrong_token_shape
+- test_failed_user_registration_when_some_credentials_are_taken
+- test_filtering_by_authors
+- test_filtering_by_favorited
+- test_filtering_by_tags
+- test_filtering_with_limit_and_offset
+- test_frw_validation_error_format
+- test_list_of_tags_when_tags_exist
+- test_not_existing_tags_will_be_created_without_duplication
+- test_retrieving_token_from_user
+- test_typed_table_use_class_attribute_as_table_name
+- test_typed_table_use_class_name_as_table_name
+- test_typed_table_uses_explicit_name
+- test_unable_to_login_when_user_does_not_exist_any_more
+- test_unable_to_login_with_wrong_jwt_prefix
+- test_unregistered_user_will_receive_profile_without_following
+- test_user
+- test_user_can_add_comment_for_article
+- test_user_can_change_favorite_state
+- test_user_can_change_following_for_another_user
+- test_user_can_change_password
+- ... and 38 more
+Schemas:
+- ArticlesFilters
+- DateTimeModelMixin
+- IDModelMixin
+- JWTMeta
+- JWTUser
+- ProfileInResponse
+- RWModel
+- TagsInList
+- UserInUpdate
+Dockerfile:
+- FROM python:3.9.10-slim
+- ENV PYTHONUNBUFFERED 1
+- EXPOSE 8000
+- CMD poetry run alembic upgrade head && \
+env referenced: []
+env missing from .env.example: []
+env undeclared in deploy config: []
+exit=0
+
+---SUMMARY---
+Repo: nsidnev/fastapi-realworld-example-app (3.8k source lines). Files read: 124 (353k chars). Stack: docker-api (correct).
+sharley spec: FAILED, exit 1 - 'no healthy providers'. No requirements/coverage produced.
+Deterministic stages: 12 routes but without router prefixes (e.g. /{slug}, /login instead of /articles/{slug}, /users/login). 9 schemas found. Test functions mixed in with app functions.
+Env check: none found; app configures via starlette Config / .env, which is not scanned.
+Gaps: router prefix resolution, Config-based env vars.

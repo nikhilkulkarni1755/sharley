@@ -1,0 +1,68 @@
+---CMD LINE OUTPUT---
++ python -m sharley spec --repo flask/examples/tutorial --out spec.json
+22 requirements (19 observed, 3 inferred), coverage 100.0%, spec 801d5115e328 -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live/flask-tutorial/spec.json
+exit=0
+
++ python -m sharley bank --spec spec.json --workspace impl --stack docker-api
+bank 801d5115e32823e6ef3e3ce80d011e1ffa09753aa5cb8f355a8887b34055e28c:0: 25 example tests -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live/flask-tutorial/impl, 60 sealed (hidden)
+exit=0
+
++ requirements (id, category, evidence, text)
+coverage 100.0 assumptions 3
+R1 functional observed - The system shall provide an index page at GET / that lists blog posts.
+R2 functional observed - The system shall provide a registration page at GET /register that lets a new user create an account.
+R3 functional observed - The system shall provide a login page at GET /login that lets a registered user authenticate.
+R4 functional observed - The system shall provide GET /logout, which ends the user's session.
+R5 functional observed - The system shall provide GET /create, which lets a logged-in user create a new post.
+R6 functional observed - The system shall provide GET /<int:id>/update, which lets a user edit the post with the given id.
+R7 functional observed - The system shall provide GET /<int:id>/delete, which lets a user delete the post with the given id.
+R8 functional observed - The system shall provide a GET /hello route that returns a simple greeting response.
+R9 functional observed - The system shall load the logged-in user from the session on each request so that views can identify the current user.
+R10 deployment observed - The system shall provide a CLI command that initializes the database schema.
+R11 data observed - The system shall close the database connection at the end of each request or application context.
+R12 data observed - The system shall persist user records in a 'user' schema.
+R13 data observed - The system shall persist blog posts in a 'post' schema, with each post linked to its author.
+R14 security observed - The system shall require authentication for create, update and delete, and redirect unauthenticated users to login.
+R15 security observed - The system shall allow only a post's author to update or delete it, and reject other users.
+R16 functional observed - The system shall return a not-found response when a post id does not exist for update or delete.
+R17 security observed - The system shall validate registration input, rejecting missing username or password and duplicate usernames.
+R18 security observed - The system shall validate login input, rejecting unknown usernames and incorrect passwords.
+R19 functional observed - The system shall validate post create and update input, for example by requiring a title.
+R20 security inferred - The system shall store user passwords as salted hashes, never in plaintext.
+R21 security inferred - The system shall use parameterized database queries to prevent SQL injection.
+R22 security inferred - The system shall protect state-changing actions, including delete, against CSRF; the delete action is exposed via GET and should be restricted to POST with a CSRF token.
+
++ example tests written to workspace
+impl/SHARLEY.md
+impl/sharley.yaml
+impl/tests/test_functional_1.py
+impl/tests/test_functional_12.py
+impl/tests/test_functional_13.py
+impl/tests/test_functional_16.py
+impl/tests/test_functional_25.py
+impl/tests/test_functional_28.py
+impl/tests/test_functional_34.py
+impl/tests/test_functional_37.py
+impl/tests/test_functional_38.py
+impl/tests/test_functional_39.py
+impl/tests/test_functional_4.py
+impl/tests/test_functional_42.py
+impl/tests/test_functional_46.py
+impl/tests/test_functional_49.py
+impl/tests/test_functional_50.py
+impl/tests/test_functional_54.py
+impl/tests/test_functional_8.py
+impl/tests/test_security_59.py
+impl/tests/test_security_62.py
+impl/tests/test_security_68.py
+impl/tests/test_security_69.py
+impl/tests/test_security_71.py
+impl/tests/test_security_75.py
+impl/tests/test_security_78.py
+impl/tests/test_security_83.py
+
+---SUMMARY---
+Repo: pallets/flask examples/tutorial. Verifier: Claude (live). spec exit 0, bank exit 0.
+Spec: 22 requirements (19 observed, 3 inferred), coverage 100%. Categories: 11 functional, 7 security, 3 data, 1 deployment. Stack: None (not auto-detected; bank was forced with --stack docker-api).
+Bank: 85 tests = 25 example (visible) + 60 sealed (hidden); no env test is visible in the workspace (any would be among the hidden ones); all requirements traced.
+Gap: same path-guessing issue; additionally this is a server-rendered Flask app (HTML forms, sessions), while the generated httpx/JSON-style tests assume an API, and the docker-api profile does not match it. Expect many of these tests to fail on the real app for reasons unrelated to bugs. Not run against the app.

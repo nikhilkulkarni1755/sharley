@@ -1,0 +1,87 @@
+---CMD LINE OUTPUT---
++ python -m sharley spec --repo full-stack-fastapi-template --out spec.json
+31 requirements (23 observed, 8 inferred), coverage 100.0%, spec b0db90a20fa6 -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live/full-stack-fastapi-template/spec.json
+exit=0
+
++ python -m sharley bank --spec spec.json --workspace impl --stack docker-api
+bank b0db90a20fa61421701c9d31d01ffec55bb032b160168f126c575f8c1381573a:0: 35 example tests -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live/full-stack-fastapi-template/impl, 78 sealed (hidden)
+exit=0
+
++ requirements (id, category, evidence, text)
+coverage 100.0 assumptions 8
+R1 functional observed - The API must allow a new user to sign up via POST /signup.
+R2 functional observed - The API must authenticate users via POST /login/access-token and issue an access token.
+R3 functional observed - The API must provide POST /login/test-token to verify that an access token is valid.
+R4 functional observed - The API must let an authenticated user read their own profile via GET /me.
+R5 functional observed - The API must let an authenticated user update their own profile via PATCH /me.
+R6 functional observed - The API must let an authenticated user change their own password via PATCH /me/password.
+R7 functional observed - The API must let an authenticated user delete their own account via DELETE /me.
+R8 functional observed - The API must support password recovery by sending a recovery email via POST /password-recovery/{email}.
+R9 functional observed - The API must allow resetting a password with a recovery token via POST /reset-password/.
+R10 functional observed - The API must provide a way to preview the password recovery email HTML via POST /password-recovery-html-content/{email}.
+R11 functional observed - The API must provide a test-email endpoint, POST /test-email/, that sends a test email.
+R12 functional observed - The API must provide a health check endpoint at GET /health-check/.
+R13 functional observed - The API must support listing users via GET / (and creating users via POST / and POST /users/).
+R14 functional observed - The API must support reading, updating, and deleting a user by ID (GET, PATCH, DELETE /{user_id}).
+R15 functional observed - The API must support listing, creating, reading, updating (PUT /{id}), and deleting items by ID.
+R16 functional observed - The frontend must provide Login, SignUp, RecoverPassword, ResetPassword, and UserSettings screens.
+R17 functional observed - The frontend must provide Admin, Dashboard, and Items views, with a users table and an items table that are paginated.
+R18 security observed - The backend must reject startup or configuration that uses default secrets in non-local environments.
+R19 security inferred - Access tokens must be created with signing and expiry, and be verified on protected routes.
+R20 security inferred - Passwords must be stored hashed, never in plaintext, and verified during authentication.
+R21 security inferred - Admin-only user management routes (list users, get, update, delete by ID, create user) must require superuser privileges.
+R22 security inferred - Item read, update, and delete operations must enforce ownership, so a non-superuser can only access their own items.
+R23 security inferred - The /me routes and the password change route must require authentication.
+R24 security inferred - Password recovery must not reveal whether an email is registered, and reset tokens must be time-limited.
+R25 security inferred - Input for signup, user creation, and password change must be validated, including email format and password strength or length.
+R26 security inferred - The test-email and html-content preview endpoints must be restricted to superusers.
+R27 data observed - The system must persist users and items in a relational database, using the psycopg driver.
+R28 deployment observed - The frontend build must accept the VITE_API_URL build argument to configure the API base URL.
+R29 deployment observed - The production container must run the FastAPI app with 4 workers.
+R30 deployment observed - The Docker build must be multi-stage, building the frontend with bun and running the backend on Python 3.14.
+R31 deployment observed - End-to-end tests must run in a Playwright container, configurable via PLAYWRIGHT_BASE_URL, with emails captured via MAILPIT_HOST.
+
++ example tests written to workspace
+impl/SHARLEY.md
+impl/sharley.yaml
+impl/tests/test_env_112.py
+impl/tests/test_functional_1.py
+impl/tests/test_functional_12.py
+impl/tests/test_functional_13.py
+impl/tests/test_functional_16.py
+impl/tests/test_functional_25.py
+impl/tests/test_functional_28.py
+impl/tests/test_functional_34.py
+impl/tests/test_functional_37.py
+impl/tests/test_functional_38.py
+impl/tests/test_functional_39.py
+impl/tests/test_functional_4.py
+impl/tests/test_functional_42.py
+impl/tests/test_functional_46.py
+impl/tests/test_functional_49.py
+impl/tests/test_functional_50.py
+impl/tests/test_functional_54.py
+impl/tests/test_functional_62.py
+impl/tests/test_functional_68.py
+impl/tests/test_functional_69.py
+impl/tests/test_functional_71.py
+impl/tests/test_functional_75.py
+impl/tests/test_functional_78.py
+impl/tests/test_functional_8.py
+impl/tests/test_functional_83.py
+impl/tests/test_functional_85.py
+impl/tests/test_functional_86.py
+impl/tests/test_security_100.py
+impl/tests/test_security_105.py
+impl/tests/test_security_107.py
+impl/tests/test_security_108.py
+impl/tests/test_security_87.py
+impl/tests/test_security_91.py
+impl/tests/test_security_92.py
+impl/tests/test_security_99.py
+
+---SUMMARY---
+Repo: fastapi/full-stack-fastapi-template. Verifier: Claude (live). spec exit 0, bank exit 0.
+Spec: 31 requirements (23 observed, 8 inferred), coverage 100%. Categories: 17 functional, 9 security, 1 data, 4 deployment. Stack: None (monorepo detection bug from the earlier baseline; bank forced with --stack docker-api).
+Bank: 113 tests = 35 example (visible) + 78 sealed (hidden), including 1 deterministic env test (test_env_112); all requirements traced.
+Gap: path guessing (e.g. AUTH_REGISTER_PATH=/api/auth/register) when the real routes are /login/access-token, /users/, /users/signup etc. The codebase summary had those routes, but the writer never saw them. Not run against the app.
