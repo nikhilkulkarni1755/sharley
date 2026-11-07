@@ -1,14 +1,15 @@
 """Shared HTTP plumbing: one error type, secrets never leave in messages."""
 import httpx
 
+from sharley.harness.budget import Meter
 from sharley.harness.provider import ModelProvider, ProviderError
 
 
 class HttpProvider(ModelProvider):
     def __init__(self, *, api_key: str = "", base_url: str = "", model: str = "",
-                 timeout: float = 60.0, client: httpx.Client | None = None):
+                 timeout: float = 60.0, client: httpx.Client | None = None, meter: Meter | None = None):
         self.api_key, self.base_url, self.model = api_key, base_url.rstrip("/"), model
-        self.timeout = timeout
+        self.timeout, self.meter = timeout, meter
         self.client = client or httpx.Client()
 
     def configured(self) -> bool:
@@ -21,6 +22,8 @@ class HttpProvider(ModelProvider):
         return text.replace(self.api_key, "***")[:300] if self.api_key else text[:300]
 
     def _post(self, url: str, payload: dict, headers: dict) -> dict:
+        if self.meter:
+            self.meter.check(self.name)
         try:
             r = self.client.post(url, json=payload, headers=headers, timeout=self.timeout)
         except httpx.HTTPError as e:
@@ -31,3 +34,11 @@ class HttpProvider(ModelProvider):
             return r.json()
         except ValueError:
             raise ProviderError(f"{self.name} returned non-JSON") from None
+
+    def _meter(self, data: dict, tokens_in: str, tokens_out: str) -> None:
+        """Charge the ledger from the response's usage block (called once per successful response)."""
+        if not self.meter:
+            return
+        u = data.get("usage") or {}
+        self.meter.charge(self.name, self.model, int(u.get(tokens_in, 0)), int(u.get(tokens_out, 0)),
+                          int(u.get("cache_read_input_tokens", 0)), int(u.get("cache_creation_input_tokens", 0)))

@@ -21,6 +21,7 @@ class AnthropicProvider(HttpProvider):
             "model": self.model, "max_tokens": 8192, "system": system,
             "messages": [{"role": "user", "content": content}],
         }, {"x-api-key": self.api_key, "anthropic-version": "2023-06-01"})
+        self._meter(data, "input_tokens", "output_tokens")
         try:
             return "".join(b["text"] for b in data["content"] if b.get("type") == "text")
         except (KeyError, TypeError):
