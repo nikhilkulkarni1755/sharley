@@ -35,8 +35,8 @@ def login(username: str, password: str) -> str:
                           (username, now - WINDOW_SECONDS)).fetchone()[0]
     if attempts >= MAX_ATTEMPTS:  # mut:ratelimit
         raise HTTPException(status_code=429, detail="too many attempts")
-    row = db.execute("SELECT id, pw_hash, salt FROM users WHERE username = ?", (username,)).fetchone()
-    if row is None or not secrets.compare_digest(row["pw_hash"], hash_password(password, row["salt"])):
+    row = db.execute("SELECT id, pw_hash, salt FROM users WHERE username = ?", (username,)).fetchone()  # mut:sql
+    if row is None or not secrets.compare_digest(row["pw_hash"], hash_password(password, row["salt"])):  # mut:credcheck
         db.execute("INSERT INTO attempts (username, at) VALUES (?, ?)", (username, now))
         db.commit()
         raise HTTPException(status_code=401, detail="invalid credentials")

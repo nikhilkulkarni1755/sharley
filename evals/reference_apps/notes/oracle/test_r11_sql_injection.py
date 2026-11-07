@@ -29,8 +29,9 @@ def test_search_term_cannot_break_out_of_query():
         _, alice = new_user(cl)
         _, bob = new_user(cl)
         add_note(cl, alice, title="alice-secret")
-        r = cl.get("/notes", params={"q": "' OR '1'='1"}, headers=bob)
-        assert r.status_code == 200 and r.json() == []
+        for q in ("%' OR 1=1 --", "'", "' OR '1'='1"):
+            r = cl.get("/notes", params={"q": q}, headers=bob)
+            assert r.status_code == 200 and r.json() == []
 
 
 def test_note_id_injection_is_rejected():
@@ -45,5 +46,5 @@ def test_note_id_injection_is_rejected():
 
 def test_login_injection_does_not_authenticate():
     with client() as cl:
-        r = cl.post("/auth/login", json={"username": "admin' --", "password": "x"})
-        assert r.status_code == 401
+        for u in ("admin' --", "'", "x' OR '1'='1"):
+            assert cl.post("/auth/login", json={"username": u, "password": "x"}).status_code == 401
