@@ -1,0 +1,6 @@
+[
+  {"id": "FLAW-FREE-POWER", "kind": "logic", "file": "app/main.py",
+   "requirement": "Every house that uses electricity must be billed; an unknown tariff must never silently bill zero",
+   "flawed": "    rate = TARIFFS.get(house[\"tariff_code\"], 0.0)  # FLAW: an unrecognised tariff code silently bills at 0 instead of normalising or failing",
+   "fixed": "    rate = TARIFFS[house[\"tariff_code\"].strip().upper().replace(\"_\", \"-\")]"}
+]

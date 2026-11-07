@@ -1,0 +1,12 @@
+[
+  {"id": "FLAW-LOGIC", "kind": "logic", "file": "app/main.py", "requirement": "A payment can be refunded only once",
+   "flawed": "    if row[\"refunded\"] and False:  # FLAW-LOGIC: refunded payments are never marked, so the same payment can be refunded repeatedly",
+   "fixed": "    if row[\"refunded\"]:",
+   "note": "Also requires the refund to set refunded=1; the fixed twin applies both edits (see second entry)."},
+  {"id": "FLAW-LOGIC", "kind": "logic", "file": "app/main.py", "requirement": "A payment can be refunded only once",
+   "flawed": "    db.execute(\"UPDATE accounts SET balance = balance - ? WHERE id = ?\", (row[\"amount\"], row[\"to_account\"]))",
+   "fixed": "    db.execute(\"UPDATE payments SET refunded = 1 WHERE id = ?\", (payment_id,))\n    db.execute(\"UPDATE accounts SET balance = balance - ? WHERE id = ?\", (row[\"amount\"], row[\"to_account\"]))"},
+  {"id": "FLAW-CVE", "kind": "cve-class", "file": "app/auth.py", "requirement": "Unsigned or tampered tokens must be rejected",
+   "flawed": "        if alg != \"none\":  # FLAW-CVE: \"alg: none\" tokens skip signature verification (cf. CVE-2015-9235, CVE-2018-1000531)",
+   "fixed": "        if True:"}
+]
