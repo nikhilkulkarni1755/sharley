@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { getRepoSamples, openRunEvents, startRepoRun } from "../lib/api";
+import { formatElapsed } from "../lib/pipeline";
 import { repoUrlError } from "../lib/repo";
+import { isFinal } from "../lib/run";
 import type { RepoSample } from "../lib/types";
 import ErrorNote from "./ErrorNote";
 import RepoAudit from "./RepoAudit";
 import SealedColumn from "./SealedColumn";
 import SourceChip from "./SourceChip";
+import SummaryCard from "./SummaryCard";
 import VerdictBanner from "./VerdictBanner";
 import { useRun } from "./useRun";
 
@@ -19,6 +22,7 @@ export default function Repo() {
   const [invalid, setInvalid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [elapsed, setElapsed] = useState<number | null>(null);
 
   const loadSamples = () => getRepoSamples().then(setSamples, (e: Error) => setError(e.message));
 
@@ -31,15 +35,23 @@ export default function Repo() {
     setInvalid(problem);
     if (problem) return;
     setError(null);
+    setElapsed(null);
+    const t0 = Date.now();
     try {
       const { run_id } = await startRepoRun(url.trim(), branch.trim() || undefined);
       setStarted(true);
-      run.stream((onEvent) => openRunEvents(run_id, onEvent));
+      run.stream((onEvent) =>
+        openRunEvents(run_id, (e) => {
+          if (isFinal(e)) setElapsed(Date.now() - t0);
+          onEvent(e);
+        }),
+      );
     } catch (e) {
       setError((e as Error).message);
     }
   };
 
+  const { report } = run.state;
   const errorText = error ?? run.state.error;
   const sealedTiles = Object.keys(run.state.sealed).map((i) => ({ index: Number(i), family: "sealed" }));
 
@@ -79,6 +91,17 @@ export default function Repo() {
       {started && <SourceChip kind="live" />}
       {errorText && <ErrorNote message={errorText} onRetry={go} />}
       {started && <RepoAudit state={run.state} running={run.running} />}
+      {elapsed !== null && (report || run.state.verdict) && (
+        <SummaryCard>
+          <h3>
+            {report
+              ? report.boot_ok
+                ? `All done in ${formatElapsed(elapsed)}: ${report.passed} of ${report.total} generated tests passed, ${report.failed} failures`
+                : `Finished in ${formatElapsed(elapsed)}: could not start this repo`
+              : `Finished in ${formatElapsed(elapsed)}: ${run.state.verdict!.verdict.status}`}
+          </h3>
+        </SummaryCard>
+      )}
       {run.state.verdict && (
         <>
           <VerdictBanner event={run.state.verdict} sealed={run.state.sealed} />

@@ -1,3 +1,4 @@
+import { isSpendCap } from "./pipeline";
 import { isFinal } from "./run";
 import type { Bank, Demo, Health, RepoSample, RunEvent, RunRequest, Sample, Spec } from "./types";
 
@@ -8,6 +9,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly retryable: boolean,
+    readonly detail?: unknown,
   ) {
     super(message);
   }
@@ -15,6 +17,7 @@ export class ApiError extends Error {
 
 export function friendlyMessage(status: number, detail: unknown): string {
   const text = typeof detail === "string" ? detail : "the request was rejected";
+  if (status === 503 && isSpendCap(detail)) return text;
   if (status === 503) return `Provider unavailable, retry in a moment. (${text})`;
   if (status === 403) return "Live repo audit is disabled on this public link. Try a sample repo.";
   if (status === 429) return "Sharley is busy or rate limited right now. Please retry in a minute.";
@@ -37,7 +40,7 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
   }
   if (!res.ok) {
     const payload = await res.json().catch(() => ({}));
-    throw new ApiError(friendlyMessage(res.status, payload.detail), res.status >= 500);
+    throw new ApiError(friendlyMessage(res.status, payload.detail), res.status >= 500 && !isSpendCap(payload.detail), payload.detail);
   }
   return res.json();
 }
@@ -47,7 +50,8 @@ export const getSamples = () => call<Sample[]>("/api/samples");
 export const getDemo = () => call<Demo>("/api/demo");
 export const createSpec = (text: string) => call<Spec>("/api/specs", { text });
 export const createSpecFromImage = (image_b64: string) => call<Spec>("/api/specs/image", { image_b64 });
-export const createBank = (spec_hash: string) => call<Bank>("/api/banks", { spec_hash, stack: STACK, seed: 0 });
+export const createBank = (spec_hash: string, allow_partial = false) =>
+  call<Bank>("/api/banks", { spec_hash, stack: STACK, seed: 0, allow_partial });
 export const startRun = (req: RunRequest) =>
   call<{ run_id: string; rejected_paths: string[] }>("/api/runs", req);
 

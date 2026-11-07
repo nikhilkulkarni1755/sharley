@@ -102,6 +102,8 @@ textarea.code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
 .field-error { color: var(--bad); font-size: 13px; }
 
 .coverage { display: grid; gap: 6px; }
+.summary { border-color: var(--ok); }
+.warn-text { color: var(--warn); font-weight: 600; }
 .bar { height: 8px; border-radius: 99px; background: #0d1019; overflow: hidden; border: 1px solid var(--line); }
 .bar > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--ok)); }
 .reqs { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -211,7 +213,9 @@ pre { margin: 0; padding: 10px; overflow-x: auto; background: #0a0d14; border-to
 .stepper { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
 .stepper li { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 .stepper li[data-state="done"] { color: var(--ok); border-color: var(--ok); }
-.stepper li[data-state="active"] { color: var(--accent); border-color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.stepper li[data-state="failed"] { color: var(--bad); border-color: var(--bad); }
+.stepper li small { color: inherit; opacity: 0.85; }
+.stepper li[data-state="active"], .stepper li[data-state="running"] { color: var(--accent); border-color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.45; } }
 .finding summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; cursor: pointer; }
 .finding pre, .panel details pre { white-space: pre-wrap; overflow-wrap: anywhere; }

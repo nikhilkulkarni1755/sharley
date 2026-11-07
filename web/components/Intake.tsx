@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, type DragEvent } from "react";
-import { createBank, createSpec, createSpecFromImage } from "../lib/api";
+import { ApiError, createBank, createSpec, createSpecFromImage } from "../lib/api";
 import { classifyFile, readDataUri, stripDataUri } from "../lib/files";
+import { idleSteps, summaryText, totalMs, untestedIds, withStep, type Step } from "../lib/pipeline";
 import type { Bank, Spec } from "../lib/types";
 import ErrorNote from "./ErrorNote";
+import PipelineStatus from "./PipelineStatus";
 import SourceChip from "./SourceChip";
 import SpecView from "./SpecView";
+import SummaryCard from "./SummaryCard";
 import TraceImage from "./TraceImage";
 import Webcam from "./Webcam";
 
@@ -24,15 +27,26 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
   const [spec, setSpec] = useState<Spec | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState<(() => void) | null>(null);
+  const [steps, setSteps] = useState<Step[]>(idleSteps);
+  const [bank, setBank] = useState<Bank | null>(null);
+  const [missing, setMissing] = useState<string[] | null>(null);
+
+  const setStep = (index: number, step: Step) => setSteps((s) => withStep(s, index, step));
 
   const run = async (task: () => Promise<Spec>, again: () => void) => {
+    const started = Date.now();
     setBusy(true);
     setError(null);
+    setBank(null);
+    setMissing(null);
+    setSteps(withStep(withStep(idleSteps(), 0, { state: "done", ms: 0 }), 1, { state: "running" }));
     try {
       setSpec(await task());
+      setStep(1, { state: "done", ms: Date.now() - started });
       setRetry(null);
     } catch (e) {
       setError((e as Error).message);
+      setStep(1, { state: "failed", reason: (e as Error).message });
       setRetry(() => again);
     } finally {
       setBusy(false);
@@ -82,21 +96,41 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
     if (file) void ingest(file);
   };
 
-  const generate = async () => {
+  const generate = async (allowPartial = false) => {
+    const started = Date.now();
     setBusy(true);
     setError(null);
+    setStep(2, { state: "running" });
     try {
-      onBank(await createBank(spec!.spec_hash));
+      setBank(await createBank(spec!.spec_hash, allowPartial));
+      setStep(2, { state: "done", ms: Date.now() - started });
+      setStep(3, { state: "done" });
     } catch (e) {
-      setError((e as Error).message);
-      setRetry(() => generate);
+      const ids = untestedIds((e as ApiError).detail);
+      setStep(2, { state: "failed", reason: ids ? `${ids.length} requirements without tests` : (e as Error).message });
+      if (ids) {
+        setMissing(ids);
+      } else {
+        setError((e as Error).message);
+        setRetry((e as ApiError).retryable ? () => () => generate() : null);
+      }
     } finally {
       setBusy(false);
     }
   };
 
+  const startOver = () => {
+    setText("");
+    setSpec(null);
+    setBank(null);
+    setMissing(null);
+    setError(null);
+    setSteps(idleSteps());
+  };
+
   return (
     <div className="stack">
+      <PipelineStatus steps={steps} />
       {imageSrc ? (
         <TraceImage src={imageSrc} />
       ) : (
@@ -144,7 +178,33 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
       {busy &&!imageSrc && <p className="muted">Working…</p>}
       {error && <ErrorNote message={error} onRetry={retry ?? undefined} />}
       {spec && <SourceChip kind="live" />}
-      {spec && <SpecView spec={spec} busy={busy} onGenerate={generate} />}
+      {missing && !bank && (
+        <div role="alert" className="note warn">
+          <span>{missing.length} requirements could not be tested ({missing.join(", ")}).</span>
+          <span className="row">
+            <button className="primary" disabled={busy} onClick={() => generate(true)}>Continue with a partial bank</button>
+            <button onClick={() => setMissing(null)}>Cancel</button>
+          </span>
+        </div>
+      )}
+      {spec && bank && (
+        <SummaryCard
+          actions={
+            <>
+              <button className="primary" onClick={() => onBank(bank)}>Open in Judge</button>
+              <button onClick={startOver}>Start over</button>
+            </>
+          }
+        >
+          <h3>{summaryText(spec, bank, totalMs(steps))}</h3>
+          {missing && <p className="warn-text">{missing.length} requirements untested</p>}
+          <p className="muted">
+            Spec model: {spec.active_provider ?? "unknown"}
+            {bank.author && ` · tests written by ${[bank.author.provider, bank.author.model].filter(Boolean).join(" ")}`}
+          </p>
+        </SummaryCard>
+      )}
+      {spec && <SpecView spec={spec} busy={busy} onGenerate={() => generate()} />}
     </div>
   );
 }
