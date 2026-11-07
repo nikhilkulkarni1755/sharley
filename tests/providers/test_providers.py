@@ -138,3 +138,37 @@ def test_gemini_rejects_unknown_thinking_level():
         GeminiProvider(api_key="g", model="m", thinking_level="extreme")
     with pytest.raises(ValueError):
         GeminiProvider(api_key="g", model="m", thinking_level="budget:1000")
+
+
+# ---- image media types
+JPEG = b"\xff\xd8\xff\xe0" + b"0" * 10
+PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"0" * 10
+
+
+@pytest.mark.parametrize("data,mime", [(JPEG, "image/jpeg"), (PNG_BYTES, "image/png"), (b"RIFF\x00\x00\x00\x00WEBPxx", "image/webp"),
+                                       (b"GIF89a...", "image/gif"), (b"unknown", "image/png")])
+def test_sniff_mime_uses_magic_bytes(data, mime):
+    from sharley.providers.base import sniff_mime
+    assert sniff_mime(data) == mime
+
+
+def test_jpeg_is_sent_with_a_jpeg_media_type_on_every_provider():
+    seen = {}
+
+    def anth(req):
+        seen["anthropic"] = json.loads(req.content)["messages"][0]["content"][0]["source"]["media_type"]
+        return httpx.Response(200, json={"content": [{"type": "text", "text": "x"}]})
+
+    def oai(req):
+        seen["openai"] = json.loads(req.content)["messages"][1]["content"][1]["image_url"]["url"][:15]
+        return httpx.Response(200, json={"choices": [{"message": {"content": "x"}}]})
+
+    def gem(req):
+        seen["gemini"] = json.loads(req.content)["input"][1]["mime_type"]
+        return httpx.Response(200, json={"outputs": [{"type": "text", "text": "x"}]})
+
+    AnthropicProvider(api_key="k", model="m", client=client(anth)).complete("s", "u", images=[JPEG])
+    oai_p = OpenAICompatProvider("meta", "meta", api_key="k", base_url="http://x/v1", model="m", client=client(oai))
+    oai_p.complete("s", "u", images=[JPEG])
+    GeminiProvider(api_key="k", model="m", client=client(gem)).complete("s", "u", images=[JPEG])
+    assert seen == {"anthropic": "image/jpeg", "openai": "data:image/jpeg", "gemini": "image/jpeg"}
