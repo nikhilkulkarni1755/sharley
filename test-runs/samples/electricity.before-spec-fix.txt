@@ -1,0 +1,65 @@
+---CMD LINE OUTPUT---
++ python sample_run.py electricity   (spec from SPEC.md -> tests -> run on flawed AND fixed twin in the Docker sandbox)
+spec: 25 requirements, coverage 100.0%, verifier family anthropic
+tests generated: 57 (families: {'functional': 35, 'security': 21, 'env': 1})
+flawed app boot_ok=True; failing tests on FLAWED: 46/57
+fixed  app boot_ok=True; failing tests on FIXED : 46/57  <- false failures
+
+DIFFERENTIAL FAILURES (fail on flawed, pass on fixed):
+
+FALSE FAILURES on the fixed twin:
+  T1 ['R1'] assert: tests/test_functional_1.py::test_load_monthly_reading_happy_path - assert 401 == 200
+  T10 ['R4'] assert: tests/test_functional_10.py::test_small_consumption_residential_b_rounds_to_exact_cents - assert 401 == 200
+  T11 ['R6'] assert: tests/test_functional_11.py::test_every_house_with_consumption_is_billed - assert 401 == 200
+  T12 ['R9'] assert: tests/test_functional_12.py::test_lower_reading_rejected_with_422 - assert 401 == 200
+  T13 ['R9'] assert: tests/test_functional_13.py::test_equal_reading_is_accepted_boundary - assert 401 == 200
+  T14 ['R9'] assert: tests/test_functional_14.py::test_rejected_lower_reading_is_not_stored - assert 401 == 200
+  T17 ['R8'] assert: tests/test_functional_17.py::test_bill_for_each_house_is_not_silent_error_shape - assert 401 == 200
+  T18 ['R12'] assert: tests/test_functional_18.py::test_operator_can_list_houses - assert 401 == 200
+  T19 ['R10', 'R11'] assert: tests/test_functional_19.py::test_first_reading_for_house_month_is_accepted - assert 401 == 200
+  T2 ['R1'] assert: tests/test_functional_2.py::test_reading_rejects_bad_month_format - assert 401 == 200
+  T20 ['R10'] assert: tests/test_functional_20.py::test_duplicate_reading_same_house_month_returns_409 - assert 401 == 200
+  T21 ['R10'] assert: tests/test_functional_21.py::test_same_month_different_houses_both_allowed - assert 401 == 200
+  T22 ['R10'] assert: tests/test_functional_22.py::test_same_house_different_months_both_allowed - assert 401 == 200
+  T23 ['R11'] assert: tests/test_functional_23.py::test_invalid_month_formats_rejected_with_422[2024-13] - assert 401 == 200
+  T24 ['R11'] assert: tests/test_functional_24.py::test_valid_month_boundaries_accepted - assert 401 == 200
+  T25 ['R13'] runtime: tests/test_functional_25.py::test_operator_can_add_reading_happy_path - httpx.LocalProtocolError: Illegal header value b'Bearer '
+  T26 ['R13'] runtime: tests/test_functional_26.py::test_duplicate_reading_for_month_conflicts - httpx.LocalProtocolError: Illegal header value b'Bearer '
+  T27 ['R13'] runtime: tests/test_functional_27.py::test_invalid_month_format_rejected - httpx.LocalProtocolError: Illegal header value b'Bearer '
+  T28 ['R13'] runtime: tests/test_functional_28.py::test_reading_going_backwards_rejected - httpx.LocalProtocolError: Illegal header value b'Bearer '
+  T29 ['R14'] runtime: tests/test_functional_29.py::test_operator_can_run_billing - httpx.LocalProtocolError: Illegal header value b'Bearer '
+  T3 ['R1'] assert: tests/test_functional_3.py::test_duplicate_month_reading_conflicts - assert 401 == 200
+  T30 ['R15', 'R14'] runtime: tests/test_functional_30.py::test_billing_summary_includes_total - httpx.LocalProtocolError: Illegal header value b'Bearer '
+  T31 ['R16'] assert: tests/test_functional_31.py::test_summary_exposes_unbilled_consumption_list - AssertionError: {"detail":"authentication required"}
+  T32 ['R16'] assert: tests/test_functional_32.py::test_summary_unbilled_entries_refer_to_known_houses - AssertionError: {"detail":"authentication required"}
+  T33 ['R21'] assert: tests/test_functional_33.py::test_reading_with_invalid_month_returns_clear_422 - AssertionError: {"detail":"authentication required"}
+  T34 ['R21'] assert: tests/test_functional_34.py::test_reading_with_malformed_body_returns_422_not_500 - AssertionError: {"detail":"authentication required"}
+  T35 ['R21'] assert: tests/test_functional_35.py::test_unknown_house_returns_client_error - AssertionError: ('/houses/no-such-house-999999', 401, '{"detail":"authentication required
+  T38 ['R17', 'R18'] runtime: test was not collected or run
+  T39 ['R17', 'R18'] runtime: test was not collected or run
+  T4 ['R1'] assert: tests/test_functional_4.py::test_reading_missing_fields_rejected - assert 401 == 200
+  T40 ['R17'] runtime: test was not collected or run
+  T41 ['R18'] runtime: test was not collected or run
+  T42 ['R18'] runtime: test was not collected or run
+  T45 ['R19', 'R17'] runtime: test was not collected or run
+  T46 ['R19'] runtime: test was not collected or run
+  T5 ['R2'] assert: tests/test_functional_5.py::test_reading_lower_than_previous_rejected - assert 401 == 200
+  T51 ['R25'] assert: tests/test_security_51.py::test_malformed_month_formats_rejected[2024-13] - AssertionError: {"detail":"authentication required"}
+  T52 ['R25'] assert: tests/test_security_52.py::test_non_string_or_missing_month_rejected[body0] - AssertionError: {"detail":"authentication required"}
+  T53 ['R25'] assert: tests/test_security_53.py::test_duplicate_month_reading_rejected - AssertionError: {"detail":"authentication required"}
+  T54 ['R25'] assert: tests/test_security_54.py::test_decreasing_reading_rejected - AssertionError: {"detail":"authentication required"}
+  T55 ['R25'] assert: tests/test_security_55.py::test_backfilled_earlier_month_higher_than_later_rejected - AssertionError: {"detail":"authentication required"}
+  T56 ['R25'] assert: tests/test_security_56.py::test_invalid_kwh_values_rejected[{{"month": "{m}", "kwh_total": -5}}] - AssertionError: {"detail":"authentication required"}
+  T6 ['R2'] assert: tests/test_functional_6.py::test_equal_consecutive_readings_allowed_zero_usage - assert 401 == 200
+  T7 ['R2', 'R3'] assert: tests/test_functional_7.py::test_bill_uses_12_cents_per_kwh_on_difference - assert 401 == 200
+  T8 ['R4'] assert: tests/test_functional_8.py::test_residential_b_billed_at_18_cents_per_kwh - assert 401 == 200
+  T9 ['R5'] assert: tests/test_functional_9.py::test_commercial_a_billed_at_25_cents_per_kwh - assert 401 == 200
+
+PLANTED FLAWS:
+  FLAW-FREE-POWER: MISSED
+exit=0
+
++ python -m sharley spend
+spent $15.4449 of $18.00 cap over 106 calls
+  meta: $11.1489 (34161 in / 216145 out tokens)
+  anthropic: $4.2961 (111992 in / 407208 out tokens)

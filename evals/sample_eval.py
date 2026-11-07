@@ -62,26 +62,31 @@ def run_sample(name: str, ctx: Context, sandbox: Sandbox, *, seed: int = 0, work
     return result
 
 
-def calibrate(bank: TestBank, reference: RunReport) -> tuple[TestBank, list[str]]:
-    """Drop every test that fails on the known-correct reference: such a test is wrong, not the implementation."""
+def calibrate(bank: TestBank, reference: RunReport, flawed: RunReport | None = None) -> tuple[TestBank, list[str]]:
+    """Drop every test that fails on the known-correct reference (such a test is wrong, not the implementation).
+
+    With the flawed run too, tests that catch the known flaw (fail on flawed, pass on reference) are sealed, so a
+    playground submission cannot pass just because the detecting tests happened to be shown as examples."""
     if not reference.boot_ok:
         raise ValueError("the reference implementation did not boot; refusing to calibrate")
     bad = failed(reference)
-    kept = [t for t in bank.tests if t.id not in bad]
-    if not kept or not any(t.visibility == "sealed" for t in kept):
+    detectors = failed(flawed) - bad if flawed is not None and flawed.boot_ok else set()
+    kept = [t.model_copy(update={"visibility": "sealed"}) if t.id in detectors else t for t in bank.tests if t.id not in bad]
+    if not any(t.visibility == "sealed" for t in kept):
         raise ValueError("calibration would leave no sealed tests")
     return bank.model_copy(update={"tests": kept}), sorted(bad)
 
 
 def calibrate_sample(name: str, ctx: Context, sandbox: Sandbox, home: Path) -> tuple[int, int, list[str]]:
-    """Calibrate the registered bank of a sample backend against its fixed twin and save it. Returns (before, after, dropped)."""
+    """Calibrate the registered bank of a sample backend against its fixed twin (and seal the flaw detectors). Returns (before, after, dropped)."""
     from sharley.judge import load_bank, save_bank
 
     from evals.sample_backends import load_index
 
     bank = load_bank(ctx.repo, load_index(home)[name])
     with tempfile.TemporaryDirectory(prefix="sharley-cal-") as tmp:
-        report = sandbox.run(fixed_copy(name, Path(tmp) / "fixed"), bank.tests, "docker-api")
-    calibrated, dropped = calibrate(bank, report)
+        fixed = sandbox.run(fixed_copy(name, Path(tmp) / "fixed"), bank.tests, "docker-api")
+        flawed = sandbox.run(flawed_copy(name, Path(tmp) / "flawed"), bank.tests, "docker-api")
+    calibrated, dropped = calibrate(bank, fixed, flawed)
     save_bank(ctx.repo, calibrated)
     return len(bank.tests), len(calibrated.tests), dropped

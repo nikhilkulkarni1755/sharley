@@ -1,0 +1,49 @@
+---CMD LINE OUTPUT---
++ python sample_run.py electricity   (spec incl. test-setup facts -> tests -> flawed AND fixed twin in the Docker sandbox)
+spec: 30 requirements, coverage 100.0%, verifier family meta
+tests generated: 70 (families: {'functional': 47, 'security': 21, 'env': 2})
+flawed app boot_ok=True; failing tests on FLAWED: 17/70
+fixed  app boot_ok=True; failing tests on FIXED : 15/70  <- false failures
+
+DIFFERENTIAL FAILURES (fail on flawed, pass on fixed):
+  T16 [functional] R7: System must fail the billing request loudly if it cannot correctly bill an unknown tariff
+      -> assert: tests/test_functional_16.py::test_billing_never_silently_zero - AssertionError: assert ['H003', 'H006', 'H009'] == []
+  T4 [functional] R1: System must compute kWh used as the difference between two monthly readings; R2: System must bill residential A tariff at 12 cents per kWh; R3: System must bill residential B tariff at 18 cents per kWh
+      -> assert: tests/test_functional_4.py::test_seeded_feb_bills_match_kwh_times_tariff_rate - AssertionError: ('H003', 275.0, 0, 18)
+
+FALSE FAILURES on the fixed twin:
+  T10 ['R6', 'R5'] assert: tests/test_functional_10.py::test_house_bills_nonzero - AssertionError: assert 422 == 200
+  T21 ['R11'] assert: tests/test_functional_21.py::test_house_list_entries_have_expected_fields - AssertionError: {'id': 'H001', 'tariff_code': 'RES-A'}
+  T35 ['R16'] assert: tests/test_functional_35.py::test_customer_can_view_own_bill - AssertionError: setup billing run failed: 422 {"detail":[{"type":"missing","loc":["query","month"
+  T37 ['R16'] assert: tests/test_functional_37.py::test_customer_cannot_view_other_bill - AssertionError: setup billing failed: 422 {"detail":[{"type":"missing","loc":["query","month
+  T44 ['R26'] assert: tests/test_functional_44.py::test_billing_2026_02_succeeds_out_of_box - AssertionError: unexpected status 422: {"detail":[{"type":"missing","loc":["query","mont
+  T45 ['R26'] assert: tests/test_functional_45.py::test_billing_2026_02_bills_cover_all_houses_and_total_matches - AssertionError: unexpected status 422: {"detail":[{"type":"missing"
+  T46 ['R26'] assert: tests/test_functional_46.py::test_billing_2026_02_summary_shows_no_unbilled_consumption - AssertionError: billing run failed 422: {"detail":[{"type":"missing","
+  T47 ['R26'] assert: tests/test_functional_47.py::test_billing_2026_02_rerun_still_succeeds - AssertionError: first run failed 422: {"detail":[{"type":"missing","loc":["query","mont
+  T5 ['R4'] assert: tests/test_functional_5.py::test_commercial_a_25_cents - AssertionError: {"detail":[{"type":"missing","loc":["query","month"],"msg":"Field required","input":nul
+  T55 ['R27'] assert: tests/test_security_55.py::test_operator_only_run_billing - AssertionError: operator should run billing, got 422
+  T57 ['R28'] assert: tests/test_security_57.py::test_customer_cannot_access_other_house - AssertionError: customer should be denied other house, got 404
+  T58 ['R28'] assert: tests/test_security_58.py::test_customer_cannot_access_other_bill - AssertionError: customer should be denied other house bill, got 404
+  T6 ['R4'] assert: tests/test_functional_6.py::test_customer_bill_commercial_a - AssertionError: assert 422 == 200
+  T7 ['R5'] assert: tests/test_functional_7.py::test_all_houses_billed - AssertionError: {"detail":[{"type":"missing","loc":["query","month"],"msg":"Field required","input":null}]}
+  T8 ['R5'] assert: tests/test_functional_8.py::test_total_equals_sum - AssertionError: {"detail":[{"type":"missing","loc":["query","month"],"msg":"Field required","input":null}]}
+
+PLANTED FLAWS:
+  FLAW-FREE-POWER: DETECTED by T16, T4
+exit=0
+
++ python cal.py electricity   (drop tests that fail on the known-correct twin)
+electricity (70, 55, ['T10', 'T21', 'T35', 'T37', 'T44', 'T45', 'T46', 'T47', 'T5', 'T55', 'T57', 'T58', 'T6', 'T7', 'T8'])
+
++ python -m sharley spend
+spent $20.1432 of $20.50 cap over 129 calls
+  meta: $15.2896 (45854 in / 296622 out tokens)
+  anthropic: $4.8535 (127733 in / 459808 out tokens)
+
+---SUMMARY---
+Electricity billing (planted: unknown tariff silently billed 0 -> houses H003, H006, H009 get free power).
+Run after fixes: 70 tests; flawed fails 17, fixed twin fails 15 (21% false failures, calibrated away -> 55). FLAW-FREE-POWER DETECTED by 2 tests (T16, T4).
+Two earlier runs failed 46/57 and 50/68 tests on BOTH apps: the operator key and house ids were in the spec but never reached the writer (requirements are atomic). Fixed by giving writers the original spec text.
+Curation note: detecting tests were first randomly placed in the visible example set, so the flawed code was 'Accepted' in the playground; the playground bank now seals tests proven to catch the flaw (labelled curation, not a claim about random splits).
+Live playground check: flawed -> 'Wrong Answer on sealed test 1 of 40: ... billed cents equals kWh x 12 or 18'; fixed -> 'Accepted' 40/40, ~2s each.
+Spend note: ledger $20.14 of the $20.50 cap across all runs; Meta is priced at a deliberately high placeholder, so real spend is lower.
