@@ -1,5 +1,6 @@
 """HTTP API: the board's window into the verifier. Sealed test content never leaves this process."""
 import asyncio
+import base64
 import json
 import tempfile
 import threading
@@ -29,6 +30,10 @@ DEMO_FIXTURE = Path(__file__).resolve().parents[2] / "evals" / "fixtures" / "dem
 
 class SpecRequest(BaseModel):
     text: str = Field(min_length=1, max_length=MAX_TEXT)
+
+
+class ImageSpecRequest(BaseModel):
+    image_b64: str = Field(min_length=1, max_length=11_000_000)  # PNG or JPEG, base64
 
 
 class BankRequest(BaseModel):
@@ -62,6 +67,17 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None) -> FastAPI:
         try:
             spec = build_spec(ctx.verifier, IntakeInput(text=req.text), repo=ctx.repo)
         except Exception as e:  # provider chain exhausted etc: a clear retryable message, never a stack trace
+            raise HTTPException(status_code=503, detail=f"intake failed, please retry: {type(e).__name__}") from None
+        return {**spec.model_dump(), "active_provider": ctx.verifier.active}
+
+    @app.post("/api/specs/image")
+    def create_spec_from_image(req: ImageSpecRequest):
+        try:
+            data = base64.b64decode(req.image_b64, validate=True)
+            spec = build_spec(ctx.verifier, IntakeInput(image=data), repo=ctx.repo)
+        except ValueError as e:  # bad base64, not PNG/JPEG, too large, unreadable
+            raise HTTPException(status_code=422, detail=str(e)) from None
+        except Exception as e:
             raise HTTPException(status_code=503, detail=f"intake failed, please retry: {type(e).__name__}") from None
         return {**spec.model_dump(), "active_provider": ctx.verifier.active}
 
