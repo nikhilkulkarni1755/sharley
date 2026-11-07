@@ -9,7 +9,7 @@ export default function VerdictBanner({ event, sealed }: { event: Extract<RunEve
       {v.hint && <p className="hint">{v.hint}</p>}
       <p>{examplesLine(v)}</p>
       <p>{sealedLine(v, sealed)}</p>
-      {hidesFailures(v, sealed) && <p className="hint">Passes everything you can see but fails hidden tests</p>}
+      {hidesFailures(v, sealed) && <p>Passes everything you can see but fails hidden tests</p>}
       <dl>
         <div>
           <dt>Implementer</dt>
