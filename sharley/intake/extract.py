@@ -1,4 +1,6 @@
 """Requirement extraction: LLM proposes, plain code assigns IDs and verifies evidence."""
+from concurrent.futures import ThreadPoolExecutor
+
 from pydantic import BaseModel, Field
 
 from sharley.harness import FallbackChain, Step
@@ -6,6 +8,7 @@ from sharley.intake.text import contains, norm
 from sharley.schemas.spec import Category, Evidence, Requirement, StackName
 
 CHUNK_CHARS = 12_000
+MAX_PARALLEL_CHUNKS = 4
 
 
 class RawRequirement(BaseModel):
@@ -62,8 +65,10 @@ def propose(chain: FallbackChain, text: str, stack: StackName | None, *, long_ch
             pass  # fall through to chunked extraction so nothing is truncated
     parts = chunks(text, chunk_chars) if len(text) > chunk_chars else [text]
     seen, out = set(), []
-    for part in parts:
-        for r in EXTRACT.run(chain, ExtractIn(text=part, stack=stack)).requirements:
+    with ThreadPoolExecutor(max_workers=min(MAX_PARALLEL_CHUNKS, len(parts))) as pool:  # chunks are independent: run them together
+        results = list(pool.map(lambda part: EXTRACT.run(chain, ExtractIn(text=part, stack=stack)).requirements, parts))
+    for requirements in results:  # merge in chunk order so output is deterministic
+        for r in requirements:
             if norm(r.text) not in seen:
                 seen.add(norm(r.text))
                 out.append(r)

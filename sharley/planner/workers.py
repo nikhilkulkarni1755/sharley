@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from sharley.generator import DraftTest, env_tests, to_test_cases, write_tests
 from sharley.harness import FallbackChain
+from sharley.harness.budget import BudgetExceeded
 from sharley.intake.codebase import render_summary, summarize_codebase
 from sharley.planner.queue import TaskQueue
 from sharley.planner.tasks import Task, plan
@@ -12,6 +13,7 @@ from sharley.schemas.spec import StackName
 from sharley.storage.repository import Repository
 
 SURFACE_CHARS = 8000
+DEFAULT_WORKERS = 8  # tasks are independent LLM calls; 12+ tasks per bank, so more workers cut wall-clock directly
 
 
 class Worker:
@@ -42,7 +44,7 @@ class Worker:
 
 def generate_test_cases(spec: Spec, repo: Repository, chain: FallbackChain, *, stack: StackName | None = None,
                         files: dict[str, str] | None = None, rules: list[str] | None = None,
-                        workers: int = 4) -> tuple[list[TestCase], TraceReport]:
+                        workers: int = DEFAULT_WORKERS) -> tuple[list[TestCase], TraceReport]:
     stack = stack or spec.stack
     if stack is None:
         raise ValueError("stack unknown: pass stack= or use a spec with a detected stack")
@@ -53,6 +55,9 @@ def generate_test_cases(spec: Spec, repo: Repository, chain: FallbackChain, *, s
     queue.enqueue(tasks)
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         list(pool.map(lambda _: Worker(repo, chain, stack, files, rules, surface).run(), range(max(1, workers))))
+    for doc in queue.results(tasks):
+        if doc["status"] == "failed" and "spend cap" in doc["error"]:
+            raise BudgetExceeded(doc["error"][:200])  # not "incomplete bank": no retry can help until the cap is raised
     by_family = [(t.family, [DraftTest.model_validate(d) for d in doc["drafts"]])
                  for t, doc in zip(tasks, queue.results(tasks)) if doc["status"] == "done"]
     cases = to_test_cases(by_family, stack)
