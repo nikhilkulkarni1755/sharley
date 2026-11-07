@@ -59,6 +59,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("images", help="build the sandbox runner images")
     ag = sub.add_parser("agents", help="run the Fetch.ai Intake/Test Author/Judge agents (register on Agentverse via mailbox)")
     ag.add_argument("--no-mailbox", action="store_true", help="local only; skip Agentverse mailbox")
+    im = sub.add_parser("improve", help="run the self-improvement loop (adopt/rollback skills) on the reference app; costs model tokens")
+    im.add_argument("--iters", type=int, default=3)
+    im.add_argument("--scope", default="global", help="'global' or a private org/user scope")
     sub.add_parser("spend", help="show paid-API spend against the cap")
     sv = sub.add_parser("serve", help="run the HTTP API for the web board")
     sv.add_argument("--host", default="127.0.0.1")
@@ -163,6 +166,20 @@ def cmd_agents(a, ctx: Context, out: TextIO) -> int:
     return OK
 
 
+def cmd_improve(a, ctx: Context, out: TextIO) -> int:
+    from evals.improve import run_improvement
+
+    if not 1 <= a.iters <= 5:
+        print("error: --iters must be between 1 and 5", file=out)
+        return USAGE
+    result = run_improvement(ctx, ctx.sandbox, scope=a.scope, iters=a.iters)
+    for v in result.timeline:
+        score = f"{v.scores.production_worthy:.3f}" if v.scores else "-"
+        print(f"v{v.version} {v.decision:11} production-worthy {score}  {v.reason}", file=out)
+    print(f"active rules ({a.scope}): {len(result.final.rules)}", file=out)
+    return OK
+
+
 def cmd_serve(a, ctx: Context, out: TextIO) -> int:
     import uvicorn
 
@@ -174,7 +191,7 @@ def cmd_serve(a, ctx: Context, out: TextIO) -> int:
 
 
 COMMANDS: dict[str, Callable] = {"spec": cmd_spec, "bank": cmd_bank, "check": cmd_check, "watch": cmd_watch,
-                                 "images": cmd_images, "serve": cmd_serve, "spend": cmd_spend, "agents": cmd_agents}
+                                 "images": cmd_images, "serve": cmd_serve, "spend": cmd_spend, "agents": cmd_agents, "improve": cmd_improve}
 
 
 def main(argv: list[str] | None = None, env: Mapping[str, str] | None = None, out: TextIO | None = None,

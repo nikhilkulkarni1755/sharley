@@ -7,6 +7,7 @@ from sharley.planner import TraceReport, generate_test_cases
 from sharley.profiles import build_contract
 from sharley.runner.base import Sandbox
 from sharley.schemas import ModelRef, Spec, TestBank, Verdict
+from sharley.skills import SkillStore
 from sharley.schemas.spec import StackName
 from sharley.storage.repository import Repository
 
@@ -19,7 +20,10 @@ class IncompleteBank(RuntimeError):
 
 def make_bank(spec: Spec, repo: Repository, chain: FallbackChain, *, stack: StackName | None = None,
               files: dict[str, str] | None = None, rules: list[str] | None = None, seed: int = 0,
-              workers: int = 4, allow_partial: bool = False) -> TestBank:
+              workers: int = 4, allow_partial: bool = False, scope: str = "global") -> TestBank:
+    """rules=None means: use the skills Sharley has adopted so far (global, plus this scope's overlay)."""
+    if rules is None:
+        rules = SkillStore(repo, scope).active_rules()
     tests, report = generate_test_cases(spec, repo, chain, stack=stack, files=files, rules=rules, workers=workers)
     if not report.ok and not allow_partial:
         raise IncompleteBank(report)

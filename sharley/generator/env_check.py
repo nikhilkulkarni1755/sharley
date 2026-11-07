@@ -40,16 +40,18 @@ def check_env(files: dict[str, str]) -> EnvReport:
                      undeclared_in_deploy=sorted(ref - deploy_vars(files)))
 
 
-_PY = '''import os
+_PY_HEAD = '''import os
 import pathlib
 
 import httpx
-
+'''
+_PY_ENV = '''
 
 def test_env_example_declares_every_referenced_variable():
     declared = {{l.split("=")[0].strip() for l in pathlib.Path(".env.example").read_text().splitlines() if "=" in l}}
     assert not set({vars}) - declared
-
+'''
+_PY = '''
 
 def test_app_boots_and_health_returns_200():
     base = os.environ.get("BASE_URL", "http://localhost:{port}")
@@ -76,7 +78,8 @@ def env_tests(files: dict[str, str], stack: StackName, requirement_ids: list[str
         return []
     p = PROFILES[stack]
     vars_ = json.dumps(sorted(env_refs(files)))
-    tpl = _PY if stack == "docker-api" else _TS
+    has_example = ".env.example" in files or not files  # greenfield contracts will ship one; an existing repo without it is not tested for it
+    tpl = (_PY_HEAD + (_PY_ENV if has_example else "") + _PY) if stack == "docker-api" else _TS
     return [DraftTest(name="env example and boot health", requirement_ids=requirement_ids,
                       code=tpl.format(vars=vars_, port=p.port, health=p.health_path),
                       hint="Environment variables are not all declared, or the app does not boot with a healthy /health.")]
