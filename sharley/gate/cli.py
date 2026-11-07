@@ -1,7 +1,6 @@
 """`sharley` command line: spec, bank, check."""
 import argparse
 import json
-import os
 import subprocess
 import sys
 import time
@@ -10,7 +9,7 @@ from pathlib import Path
 from typing import TextIO
 
 from sharley.gate import service
-from sharley.gate.context import Context
+from sharley.gate.context import Context, load_env
 from sharley.gate.git import GhHost
 from sharley.gate.watch import watch_once
 from sharley.gate.report import exit_code, github_annotation, render
@@ -149,7 +148,7 @@ COMMANDS: dict[str, Callable] = {"spec": cmd_spec, "bank": cmd_bank, "check": cm
 def main(argv: list[str] | None = None, env: Mapping[str, str] | None = None, out: TextIO | None = None,
          context_factory: Callable[[Mapping[str, str]], Context] = Context.from_env) -> int:
     out = out or sys.stdout
-    env = os.environ if env is None else env
+    env = load_env() if env is None else env
     try:
         args = build_parser().parse_args(argv)
     except SystemExit as e:
