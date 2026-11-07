@@ -57,6 +57,8 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--implementer-family", required=True)
     w.add_argument("--interval", type=int, default=0, help="seconds between polls; 0 = run once")
     sub.add_parser("images", help="build the sandbox runner images")
+    ag = sub.add_parser("agents", help="run the Fetch.ai Intake/Test Author/Judge agents (register on Agentverse via mailbox)")
+    ag.add_argument("--no-mailbox", action="store_true", help="local only; skip Agentverse mailbox")
     sub.add_parser("spend", help="show paid-API spend against the cap")
     sv = sub.add_parser("serve", help="run the HTTP API for the web board")
     sv.add_argument("--host", default="127.0.0.1")
@@ -144,6 +146,23 @@ def cmd_spend(a, ctx: Context, out: TextIO) -> int:
     return OK
 
 
+def cmd_agents(a, ctx: Context, out: TextIO) -> int:
+    from uagents import Bureau
+
+    from agents.conversation import Conversation
+    from agents.runtime import build_agents
+    from agents.services import LocalServices
+
+    intake, author, judge = build_agents(Conversation(LocalServices(ctx)), mailbox=not a.no_mailbox)
+    for agent in (intake, author, judge):
+        print(f"{agent.name}: {agent.address}", file=out)
+    bureau = Bureau()
+    for agent in (intake, author, judge):
+        bureau.add(agent)
+    bureau.run()
+    return OK
+
+
 def cmd_serve(a, ctx: Context, out: TextIO) -> int:
     import uvicorn
 
@@ -155,7 +174,7 @@ def cmd_serve(a, ctx: Context, out: TextIO) -> int:
 
 
 COMMANDS: dict[str, Callable] = {"spec": cmd_spec, "bank": cmd_bank, "check": cmd_check, "watch": cmd_watch,
-                                 "images": cmd_images, "serve": cmd_serve, "spend": cmd_spend}
+                                 "images": cmd_images, "serve": cmd_serve, "spend": cmd_spend, "agents": cmd_agents}
 
 
 def main(argv: list[str] | None = None, env: Mapping[str, str] | None = None, out: TextIO | None = None,
