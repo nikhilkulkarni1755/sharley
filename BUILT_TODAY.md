@@ -13,3 +13,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 | Intake (spec extraction) | `sharley/intake/` | #7 |
 | Test generator | `sharley/generator/` | #8 |
 | Planner + queue + workers | `sharley/planner/` | #9 |
+| Sandbox runner (local Docker) | `sharley/runner/` | #10 |
