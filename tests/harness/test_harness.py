@@ -115,3 +115,12 @@ def test_step_rejects_invalid_input_before_any_call():
 def test_empty_chain_rejected():
     with pytest.raises(ValueError):
         FallbackChain([])
+
+
+def test_active_ref_identifies_the_answering_provider():
+    a, b = ScriptedProvider("a", [ProviderError("x")], family="meta"), ScriptedProvider("b", ["ok"], family="anthropic")
+    chain = FallbackChain([a, b])
+    assert chain.active_ref().family == "meta"  # before any call: first healthy
+    chain.complete("s", "u")
+    ref = chain.active_ref()
+    assert (ref.provider, ref.family, ref.model) == ("b", "anthropic", "b-m")
