@@ -65,7 +65,7 @@ cp -r /in/work/. /app/ && chown -R 65534:65534 /app && cd /app
 pid=$!
 ok=0; for i in $(seq 1 {BOOT_WAIT_S}); do [ -d /proc/$pid ] && ! grep -q '^State:[[:space:]]*Z' /proc/$pid/status 2>/dev/null || break; if {probe} 2>/dev/null; then ok=1; break; fi; sleep 1; done
 if [ $ok -eq 0 ]; then echo SHARLEY_BOOT_FAILED; tail -n 40 /tmp/boot.log; exit 3; fi
-cd /in/t && PYTHONDONTWRITEBYTECODE=1 BASE_URL=http://127.0.0.1:{p.port} {run_tests}
+cd /in/t && COLUMNS=1000 PYTHONDONTWRITEBYTECODE=1 BASE_URL=http://127.0.0.1:{p.port} {run_tests}
 """
 
 

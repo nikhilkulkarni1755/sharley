@@ -1,5 +1,6 @@
 """Parse test-runner output into per-test-case results. Only trusted runner sections are read."""
 import json
+import re
 
 from sharley.runner.base import TestResult
 from sharley.schemas.testbank import TestCase
@@ -10,6 +11,18 @@ CLIP = 600
 
 def _by_file(tests: list[TestCase]) -> dict[str, TestCase]:
     return {t.file: t for t in tests}
+
+
+def failures(entries: list[tuple[str, str]]):
+    return [(h, r) for h, r in entries if h != "PASSED"]
+
+
+def _is_runtime(head: str, rest: str) -> bool:
+    """ERROR (setup/collection) and non-assertion exceptions are runtime errors; a bare FAILED is an assertion."""
+    msg = rest.partition(" - ")[2]
+    if head == "ERROR":
+        return True
+    return bool(re.match(r"[\w.]+(Error|Exception|Timeout|Exit)\b", msg)) and not msg.startswith("AssertionError")
 
 
 def parse_pytest(stdout: str, tests: list[TestCase]) -> list[TestResult]:
@@ -28,7 +41,7 @@ def parse_pytest(stdout: str, tests: list[TestCase]) -> list[TestResult]:
         if entries and not bad:
             out.append(TestResult(test_id=t.id, passed=True, kind="pass"))
         elif bad:
-            kind = "assert" if any("AssertionError" in r or " - assert" in r for r in bad) else "runtime"
+            kind = "runtime" if any(_is_runtime(h, r) for h, r in failures(entries)) else "assert"
             out.append(TestResult(test_id=t.id, passed=False, kind=kind, output=bad[0][:CLIP]))
         else:
             out.append(TestResult(test_id=t.id, passed=False, kind="runtime", output="test was not collected or run"))
