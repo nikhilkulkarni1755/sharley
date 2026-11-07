@@ -12,7 +12,7 @@ export default function ScoreCurve({ timeline }: { timeline: SkillVersion[] }) {
       <h3>Held-out production-worthy score per skill version</h3>
       <svg viewBox={`0 0 ${W} ${H}`} className="curve" role="img" aria-label="Score curve per skill version">
         <line x1={PAD} x2={W - PAD} y1={thresholdY} y2={thresholdY} className="threshold" data-testid="threshold" />
-        <text x={W - PAD} y={thresholdY - 5} textAnchor="end" className="axis">
+        <text x={PAD} y={thresholdY - 5} className="axis">
           threshold {THRESHOLD.toFixed(2)}
         </text>
         <path d={path} pathLength={1} className="line" data-testid="curve-line" />
