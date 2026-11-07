@@ -57,6 +57,9 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--implementer-family", required=True)
     w.add_argument("--interval", type=int, default=0, help="seconds between polls; 0 = run once")
     sub.add_parser("images", help="build the sandbox runner images")
+    sv = sub.add_parser("serve", help="run the HTTP API for the web board")
+    sv.add_argument("--host", default="127.0.0.1")
+    sv.add_argument("--port", type=int, default=8000)
     return p
 
 
@@ -129,8 +132,18 @@ def cmd_images(a, ctx: Context, out: TextIO) -> int:
     return OK
 
 
+def cmd_serve(a, ctx: Context, out: TextIO) -> int:
+    import uvicorn
+
+    from sharley.api import create_app
+
+    uvicorn.run(create_app(ctx, [o for o in ctx.env.get("SHARLEY_CORS_ORIGINS", "http://localhost:3000").split(",") if o]),
+                host=a.host, port=a.port)
+    return OK
+
+
 COMMANDS: dict[str, Callable] = {"spec": cmd_spec, "bank": cmd_bank, "check": cmd_check, "watch": cmd_watch,
-                                 "images": cmd_images}
+                                 "images": cmd_images, "serve": cmd_serve}
 
 
 def main(argv: list[str] | None = None, env: Mapping[str, str] | None = None, out: TextIO | None = None,
