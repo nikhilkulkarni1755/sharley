@@ -38,10 +38,12 @@ def generate_mutants(app_dir: Path, seed: int = 0, heldout_every: tuple[int, ...
     for item in found:
         by_op.setdefault(item[2].name, []).append(item)
     mutants = []
-    for items in by_op.values():
+    groups = [v for v in by_op.values() if len(v) > 1]
+    groups.append([item for v in by_op.values() if len(v) == 1 for item in v])  # singleton operators share one pool
+    for items in groups:
         ranked = sorted(items, key=lambda t: sha256_text(f"{seed}:{t[0]}:{t[1]}:{t[2].name}"))
         for i, (rel, n, op, line, new) in enumerate(ranked):
-            split = "heldout" if len(ranked) > 1 and i % 5 in heldout_every else "train"
+            split = "heldout" if i % 5 in heldout_every else "train"
             mutants.append(Mutant(id="", operator=op.name, category=op.category, file=rel, line=n,
                                   original=line, mutated=new, split=split))
     mutants.sort(key=lambda m: (m.file, m.line, m.operator))

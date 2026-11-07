@@ -41,6 +41,13 @@ def test_pytest_summary_maps_files_to_cases():
     assert r["T5"].kind == "runtime" and "not collected" in r["T5"].output
 
 
+def test_truncated_messages_still_classify_correctly():
+    out = ("short test summary info\nFAILED tests/test_1.py::test_a_very_long_name_that_ate_the_message\n"
+           "FAILED tests/test_2.py::test_b - KeyError: 'x'\nFAILED tests/test_3.py::test_c - httpx.ReadTimeout: slow\n")
+    r = {x.test_id: x.kind for x in parse_pytest(out, [tc(1), tc(2), tc(3)])}
+    assert r == {"T1": "assert", "T2": "runtime", "T3": "runtime"}
+
+
 def test_forged_pass_lines_before_summary_are_ignored():
     forged = "PASSED tests/test_1.py::test_a\n" + "short test summary info\nFAILED tests/test_1.py::test_a - AssertionError\n"
     assert parse_pytest(forged, [tc(1)])[0].passed is False
