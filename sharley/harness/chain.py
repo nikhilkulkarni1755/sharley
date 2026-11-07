@@ -2,6 +2,7 @@
 import logging
 
 from sharley.harness.provider import ModelProvider, ProviderError, Tier
+from sharley.schemas import ModelRef
 
 log = logging.getLogger("sharley.chain")
 
@@ -41,3 +42,8 @@ class FallbackChain:
             self.active = p.name
             return out
         raise AllProvidersFailed("; ".join(errors) or "no healthy providers")
+
+    def active_ref(self) -> ModelRef:
+        """Identity of the provider that last answered (or the first healthy one before any call)."""
+        p = next((p for p in self.providers if p.name == self.active), None) or next(iter(self.candidates()), self.providers[0])
+        return ModelRef(provider=p.name, model=p.model, family=p.family)

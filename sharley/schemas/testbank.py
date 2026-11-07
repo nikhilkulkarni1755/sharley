@@ -6,6 +6,7 @@ from pydantic import Field, computed_field, model_validator
 
 from sharley.hashing import sha256_text
 from sharley.schemas.spec import REQ_ID, Strict
+from sharley.schemas.verdict import ModelRef
 
 Family = Literal["functional", "security", "env"]
 Visibility = Literal["example", "sealed"]
@@ -44,6 +45,7 @@ class TestBank(Strict):
     spec_hash: str
     seed: int
     example_ratio: float = Field(default=0.3, gt=0, lt=1)
+    author: ModelRef | None = None  # the verifier model that wrote these tests
     tests: list[TestCase] = Field(min_length=1)
 
     @model_validator(mode="after")
