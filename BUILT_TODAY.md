@@ -12,3 +12,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 | Stack profiles | `sharley/profiles/` | #6 |
 | Intake (spec extraction) | `sharley/intake/` | #7 |
 | Test generator | `sharley/generator/` | #8 |
+| Planner + queue + workers | `sharley/planner/` | #9 |
