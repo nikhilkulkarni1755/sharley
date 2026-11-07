@@ -8,10 +8,11 @@ import ErrorNote from "./ErrorNote";
 import Header from "./Header";
 import Intake from "./Intake";
 import Judge, { type Mode } from "./Judge";
+import Playground from "./Playground";
 import Tabs, { type TabId } from "./Tabs";
 
 export default function Board() {
-  const [tab, setTab] = useState<TabId>("intake");
+  const [tab, setTab] = useState<TabId>("playground");
   const [mode, setMode] = useState<Mode>("replay");
   const [bank, setBank] = useState<Bank | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
@@ -40,6 +41,9 @@ export default function Board() {
     <main>
       <Header health={health} />
       <Tabs active={tab} onChange={setTab} />
+      <section role="tabpanel" id="panel-playground" aria-labelledby="tab-playground" hidden={tab !== "playground"}>
+        {tab === "playground" && <Playground />}
+      </section>
       <section role="tabpanel" id="panel-intake" aria-labelledby="tab-intake" hidden={tab !== "intake"}>
         <Intake onBank={bankReady} />
       </section>

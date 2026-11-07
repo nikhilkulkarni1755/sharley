@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { alertOf, buildSpec, demo, mockApi } from "./mock";
+import { alertOf, buildSpec, demo, gotoIntake, mockApi } from "./mock";
 
 const PNG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 
@@ -19,9 +19,9 @@ test("pasted text becomes requirements with observed and inferred badges and cov
 });
 
 test("a dropped text file is sent as text", async ({ page }) => {
-  await page.goto("/");
+  await gotoIntake(page);
   const request = page.waitForRequest("**/api/specs");
-  await page.locator('input[type="file"]').setInputFiles({ name: "brief.md", mimeType: "text/markdown", buffer: Buffer.from("# Notes API") });
+  await page.getByLabel("Choose file").setInputFiles({ name: "brief.md", mimeType: "text/markdown", buffer: Buffer.from("# Notes API") });
   expect((await request).postDataJSON()).toEqual({ text: "# Notes API" });
   await expect(page.getByRole("region", { name: "Spec" })).toBeVisible();
 });
@@ -35,7 +35,7 @@ test("a dropped image shows the tracing animation, then the spec", async ({ page
     await route.fulfill({ json: demo.spec });
   });
   const request = page.waitForRequest("**/api/specs/image");
-  await page.goto("/");
+  await gotoIntake(page);
   const dt = await page.evaluateHandle((b64) => {
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     const data = new DataTransfer();
@@ -55,7 +55,7 @@ test("a dropped image shows the tracing animation, then the spec", async ({ page
 });
 
 test("unsupported files get a friendly message", async ({ page }) => {
-  await page.goto("/");
-  await page.locator('input[type="file"]').setInputFiles({ name: "x.exe", mimeType: "application/octet-stream", buffer: Buffer.from("MZ") });
+  await gotoIntake(page);
+  await page.getByLabel("Choose file").setInputFiles({ name: "x.exe", mimeType: "application/octet-stream", buffer: Buffer.from("MZ") });
   await expect(alertOf(page)).toContainText("text file or a PNG/JPEG");
 });

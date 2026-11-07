@@ -114,6 +114,14 @@ export interface Demo {
   timeline: SkillVersion[];
 }
 
+export interface Sample {
+  name: "payments" | "electricity";
+  title: string;
+  spec: string;
+  files: Record<string, string>;
+  bank: Bank | null;
+}
+
 export interface Health {
   status: string;
   offline: boolean;

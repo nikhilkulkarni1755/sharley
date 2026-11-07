@@ -1,6 +1,9 @@
 # Sharley board
 
-Static Next.js board (Intake, Judge, Eval) over the Sharley API. It is a window into the verifier: sealed tests never reach the browser.
+Static Next.js board (Playground, Intake, Judge, Eval) over the Sharley API. It is a window into the verifier: sealed tests never reach the browser.
+
+- **Playground** (default tab): pick a sample backend from `GET /api/samples`, edit its code (kept per backend in `sessionStorage`) and run the sealed tests against your edits.
+- **Intake** also accepts a camera photo (`Take a photo`), a live webcam capture (`Use webcam`, needs `camera=(self)` in `Permissions-Policy`) and `Try the sample sketch` (`public/sample-sketch.png`).
 
 ## Develop
 
