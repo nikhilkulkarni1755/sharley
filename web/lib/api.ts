@@ -1,4 +1,5 @@
-import type { Bank, Demo, Health, RunEvent, RunRequest, Sample, Spec } from "./types";
+import { isFinal } from "./run";
+import type { Bank, Demo, Health, RepoSample, RunEvent, RunRequest, Sample, Spec } from "./types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 export const STACK = "docker-api";
@@ -15,6 +16,8 @@ export class ApiError extends Error {
 export function friendlyMessage(status: number, detail: unknown): string {
   const text = typeof detail === "string" ? detail : "the request was rejected";
   if (status === 503) return `Provider unavailable, retry in a moment. (${text})`;
+  if (status === 403) return "Live repo audit is disabled on this public link. Try a sample repo.";
+  if (status === 429) return "Sharley is busy or rate limited right now. Please retry in a minute.";
   if (status === 422) return `Invalid input: ${text}`;
   if (status === 413) return "That payload is too large.";
   if (status === 404) return `Not found: ${text}`;
@@ -48,7 +51,11 @@ export const createBank = (spec_hash: string) => call<Bank>("/api/banks", { spec
 export const startRun = (req: RunRequest) =>
   call<{ run_id: string; rejected_paths: string[] }>("/api/runs", req);
 
-const NAMED_EVENTS = ["example", "sealed", "verdict"];
+export const getRepoSamples = () => call<RepoSample[]>("/api/repos/samples");
+export const startRepoRun = (url: string, branch?: string) =>
+  call<{ run_id: string; mode: "sealed" | "audit" }>("/api/repos", { url, branch });
+
+const NAMED_EVENTS = ["example", "sealed", "verdict", "stage", "surface", "finding", "report"];
 
 /** Streams run events; the server names each SSE event, so listen per type as well as on unnamed messages. */
 export function openRunEvents(runId: string, onEvent: (e: RunEvent) => void): () => void {
@@ -56,7 +63,7 @@ export function openRunEvents(runId: string, onEvent: (e: RunEvent) => void): ()
   const handle = (m: MessageEvent) => {
     const event: RunEvent = JSON.parse(m.data);
     onEvent(event);
-    if (event.type === "verdict" || event.type === "error") source.close();
+    if (isFinal(event)) source.close();
   };
   source.onmessage = handle;
   for (const type of NAMED_EVENTS) {

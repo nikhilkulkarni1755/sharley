@@ -34,6 +34,8 @@ h3 .muted { font-weight: 400; font-size: 13px; }
 .between { justify-content: space-between; }
 
 .top { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.tagline { font-size: 17px; font-weight: 600; }
+.top p { max-width: 70ch; }
 .health { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
 
 .chip, .badge {
@@ -44,6 +46,12 @@ h3 .muted { font-weight: 400; font-size: 13px; }
 .chip.ok { color: var(--ok); }
 .chip.bad { color: var(--bad); }
 .chip.warn { color: var(--warn); }
+.source { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13px; }
+.source details p { margin-top: 4px; }
+.chip.src { font-weight: 700; letter-spacing: 0.04em; }
+.chip.src.live { color: var(--ok); border-color: var(--ok); }
+.chip.src.recorded { color: var(--warn); border-color: var(--warn); }
+.chip.src.prebuilt { color: var(--accent); border-color: var(--accent); }
 .dot-sm { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .badge { font-weight: 600; }
 .badge.ok, .badge.adopted { color: var(--ok); border-color: var(--ok); background: #3ddc9714; }
@@ -199,6 +207,16 @@ pre { margin: 0; padding: 10px; overflow-x: auto; background: #0a0d14; border-to
 .version pre { border: 1px solid var(--line); border-radius: 8px; white-space: pre-wrap; }
 .version.rolled_back .reason { color: var(--bad); }
 .version p { font-size: 13px; }
+
+.stepper { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.stepper li { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.stepper li[data-state="done"] { color: var(--ok); border-color: var(--ok); }
+.stepper li[data-state="active"] { color: var(--accent); border-color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.45; } }
+.finding summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; cursor: pointer; }
+.finding pre, .panel details pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bar { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--ok); }
 
 @media (max-width: 800px) {
   .judge-grid, .playground { grid-template-columns: 1fr; }

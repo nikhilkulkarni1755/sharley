@@ -5,6 +5,7 @@ import { createBank, createSpec, createSpecFromImage } from "../lib/api";
 import { classifyFile, readDataUri, stripDataUri } from "../lib/files";
 import type { Bank, Spec } from "../lib/types";
 import ErrorNote from "./ErrorNote";
+import SourceChip from "./SourceChip";
 import SpecView from "./SpecView";
 import TraceImage from "./TraceImage";
 import Webcam from "./Webcam";
@@ -142,6 +143,7 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
       {webcam && !imageSrc && <Webcam onCapture={captured} onClose={closeWebcam} />}
       {busy &&!imageSrc && <p className="muted">Working…</p>}
       {error && <ErrorNote message={error} onRetry={retry ?? undefined} />}
+      {spec && <SourceChip kind="live" />}
       {spec && <SpecView spec={spec} busy={busy} onGenerate={generate} />}
     </div>
   );

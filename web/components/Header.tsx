@@ -5,7 +5,8 @@ export default function Header({ health }: { health: Health | null }) {
     <header className="top">
       <div>
         <h1>Sharley</h1>
-        <p className="muted">Independent verifier: example tests are shown, sealed tests decide.</p>
+        <p className="tagline">Independent Security and QA verifier for AI Code!</p>
+        <p className="muted">Give it a spec, a photo of a whiteboard, or a GitHub repo. Sharley writes hidden tests, runs them in a sandbox, and tells you what is broken.</p>
       </div>
       <ul className="health" aria-label="API health">
         {health === null ? (

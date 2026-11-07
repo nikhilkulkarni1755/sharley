@@ -1,15 +1,22 @@
 import type { RunEvent } from "./types";
 
-type VerdictEvent = Extract<RunEvent, { type: "verdict" }>;
+type EventOf<T extends RunEvent["type"]> = Extract<RunEvent, { type: T }>;
 
 export interface RunState {
   examples: Record<string, boolean>;
   sealed: Record<number, boolean>;
-  verdict: VerdictEvent | null;
+  verdict: EventOf<"verdict"> | null;
+  stage: EventOf<"stage"> | null;
+  surface: EventOf<"surface"> | null;
+  findings: EventOf<"finding">[];
+  report: EventOf<"report"> | null;
   error: string | null;
 }
 
-export const emptyRun: RunState = { examples: {}, sealed: {}, verdict: null, error: null };
+export const emptyRun: RunState = { examples: {}, sealed: {}, verdict: null, stage: null, surface: null, findings: [], report: null, error: null };
+
+/** The events after which the stream is over. */
+export const isFinal = (e: RunEvent): boolean => e.type === "verdict" || e.type === "report" || e.type === "error";
 
 /** Folds one SSE event into the run state; absent keys mean the test has not reported yet. */
 export function applyEvent(state: RunState, event: RunEvent): RunState {
@@ -20,6 +27,14 @@ export function applyEvent(state: RunState, event: RunEvent): RunState {
       return { ...state, sealed: { ...state.sealed, [event.index]: event.passed } };
     case "verdict":
       return { ...state, verdict: event };
+    case "stage":
+      return { ...state, stage: event };
+    case "surface":
+      return { ...state, surface: event };
+    case "finding":
+      return { ...state, findings: [...state.findings, event] };
+    case "report":
+      return { ...state, report: event };
     case "error":
       return { ...state, error: event.detail };
   }

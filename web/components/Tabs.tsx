@@ -4,6 +4,7 @@ import type { KeyboardEvent } from "react";
 
 export const TABS = [
   { id: "playground", label: "Playground" },
+  { id: "repo", label: "GitHub repo" },
   { id: "intake", label: "Intake" },
   { id: "judge", label: "Judge" },
   { id: "eval", label: "Eval" },

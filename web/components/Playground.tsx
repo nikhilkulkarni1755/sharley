@@ -8,6 +8,7 @@ import CodeEditor from "./CodeEditor";
 import ErrorNote from "./ErrorNote";
 import ExampleList from "./ExampleList";
 import SealedColumn from "./SealedColumn";
+import SourceChip from "./SourceChip";
 import VerdictBanner from "./VerdictBanner";
 import { useRun } from "./useRun";
 import { useSubmission } from "./useSubmission";
@@ -74,12 +75,13 @@ function Workbench({ sample }: { sample: Sample }) {
       </div>
 
       <div className="stack">
+        {attempts > 0 && <SourceChip kind="live" />}
         {errorText && <ErrorNote message={runErrorText(errorText)} onRetry={last ? () => go(last) : undefined} />}
         {run.running && <p className="muted" role="status">Running sealed tests…</p>}
         {rejected.length > 0 && <p className="note warn">Ignored paths (not allowed): {rejected.join(", ")}</p>}
         {run.state.verdict && (
           <div className={accepted ? "celebrate" : undefined}>
-            <VerdictBanner event={run.state.verdict} />
+            <VerdictBanner event={run.state.verdict} sealed={run.state.sealed} />
             {accepted && <p className="cheer" role="status">All sealed tests pass — verified independently in {attempts} attempt{attempts === 1 ? "" : "s"}.</p>}
           </div>
         )}
@@ -116,6 +118,7 @@ export default function Playground() {
     <div className="stack">
       <h2>Playground</h2>
       <p className="muted">Pick a backend, tweak its code and let the sealed tests judge it.</p>
+      <SourceChip kind="prebuilt" />
       {error && <ErrorNote message={error} onRetry={retry} />}
       {!samples && !error && <p className="muted">Loading backends…</p>}
       {samples && (

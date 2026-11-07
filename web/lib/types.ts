@@ -78,7 +78,29 @@ export type RunEvent =
   | { type: "example"; id: string; name: string; passed: boolean }
   | { type: "sealed"; index: number; passed: boolean }
   | { type: "verdict"; verdict: Verdict; summary: string; rejected_paths: string[] }
+  | { type: "stage"; stage: RepoStage; detail: string }
+  | { type: "surface"; stack: string | null; files: number; routes: number; env_vars: number }
+  | {
+      type: "finding";
+      id: string;
+      name: string;
+      family: string;
+      requirement_ids: string[];
+      requirement_text: string;
+      kind: "assert" | "runtime";
+      message: string;
+    }
+  | { type: "report"; total: number; passed: number; failed: number; boot_ok: boolean; build_output: string }
   | { type: "error"; detail: string };
+
+export type RepoStage = "cloning" | "analyzing" | "writing_tests" | "running_tests";
+
+export interface RepoSample {
+  name: string;
+  title: string;
+  url: string;
+  pitch: string;
+}
 
 export interface Mutant {
   id: string;
