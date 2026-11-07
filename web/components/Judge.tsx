@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { openRunEvents, startRun, STACK } from "../lib/api";
 import type { Bank, Demo } from "../lib/types";
 import ErrorNote from "./ErrorNote";
 import ExampleList from "./ExampleList";
 import SealedColumn from "./SealedColumn";
-import SubmitPanel, { type Submission } from "./SubmitPanel";
+import SubmitPanel from "./SubmitPanel";
 import VerdictBanner from "./VerdictBanner";
 import { useRun } from "./useRun";
+import { useSubmission } from "./useSubmission";
 
 export type Mode = "live" | "replay";
 
@@ -23,29 +22,8 @@ interface Props {
 
 export default function Judge({ mode, onMode, liveBank, demo, loadError, onRetry }: Props) {
   const run = useRun();
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [rejected, setRejected] = useState<string[]>([]);
-  const [last, setLast] = useState<Submission | null>(null);
   const bank = mode === "live" ? liveBank : (demo?.bank ?? null);
-
-  const submit = async (s: Submission) => {
-    setLast(s);
-    setSubmitError(null);
-    setRejected([]);
-    try {
-      const started = await startRun({
-        bank: bank!.key,
-        implementer_model: s.model,
-        implementer_family: s.family,
-        files: s.files,
-        stack: STACK,
-      });
-      setRejected(started.rejected_paths);
-      run.stream((onEvent) => openRunEvents(started.run_id, onEvent));
-    } catch (e) {
-      setSubmitError((e as Error).message);
-    }
-  };
+  const { submit, error: submitError, rejected, last } = useSubmission(bank, run);
 
   return (
     <div className="stack">

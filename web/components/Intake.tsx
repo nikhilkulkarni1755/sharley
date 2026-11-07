@@ -7,6 +7,7 @@ import type { Bank, Spec } from "../lib/types";
 import ErrorNote from "./ErrorNote";
 import SpecView from "./SpecView";
 import TraceImage from "./TraceImage";
+import Webcam from "./Webcam";
 
 const REJECTIONS = {
   unsupported: "Drop a text file or a PNG/JPEG image.",
@@ -18,6 +19,7 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [webcam, setWebcam] = useState(false);
   const [spec, setSpec] = useState<Spec | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState<(() => void) | null>(null);
@@ -53,7 +55,26 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
     return submitText(content);
   };
 
-  const onDrop = (e: DragEvent) => {
+  const closeWebcam = (reason?: string) => {
+    setWebcam(false);
+    if (reason) setError(reason);
+  };
+
+  const captured = (png: File) => {
+    setWebcam(false);
+    void ingest(png);
+  };
+
+  const useSample = async () => {
+    try {
+      const blob = await (await fetch("/sample-sketch.png")).blob();
+      await ingest(new File([blob], "sample-sketch.png", { type: "image/png" }));
+    } catch {
+      setError("Could not load the sample sketch.");
+    }
+  };
+
+  const onDrop =(e: DragEvent) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
@@ -108,9 +129,18 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
               />
             </label>
           </div>
+          <div className="row">
+            <label className="button">
+              Take a photo
+              <input type="file" accept="image/*" capture="environment" onChange={(e) => e.target.files?.[0] && void ingest(e.target.files[0])} />
+            </label>
+            <button onClick={() => setWebcam(true)} disabled={webcam}>Use webcam</button>
+            <button onClick={useSample}>Try the sample sketch</button>
+          </div>
         </div>
       )}
-      {busy && !imageSrc && <p className="muted">Working…</p>}
+      {webcam && !imageSrc && <Webcam onCapture={captured} onClose={closeWebcam} />}
+      {busy &&!imageSrc && <p className="muted">Working…</p>}
       {error && <ErrorNote message={error} onRetry={retry ?? undefined} />}
       {spec && <SpecView spec={spec} busy={busy} onGenerate={generate} />}
     </div>

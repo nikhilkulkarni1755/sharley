@@ -6,6 +6,7 @@ export default function VerdictBanner({ event }: { event: Extract<RunEvent, { ty
   return (
     <section className={`verdict ${verdictTone(v.status)}`} aria-label="Verdict">
       <h3>{verdictHeadline(v.status, event.summary)}</h3>
+      {v.hint && <p className="hint">{v.hint}</p>}
       <p>{examplesLine(v)}</p>
       <dl>
         <div>

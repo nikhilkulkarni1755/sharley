@@ -1,4 +1,4 @@
-import type { Bank, Demo, Health, RunEvent, RunRequest, Spec } from "./types";
+import type { Bank, Demo, Health, RunEvent, RunRequest, Sample, Spec } from "./types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 export const STACK = "docker-api";
@@ -40,6 +40,7 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export const getHealth = () => call<Health>("/api/health");
+export const getSamples = () => call<Sample[]>("/api/samples");
 export const getDemo = () => call<Demo>("/api/demo");
 export const createSpec = (text: string) => call<Spec>("/api/specs", { text });
 export const createSpecFromImage = (image_b64: string) => call<Spec>("/api/specs/image", { image_b64 });
