@@ -2,17 +2,22 @@
 import argparse
 import json
 import os
+import subprocess
 import sys
+import time
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TextIO
 
 from sharley.gate import service
 from sharley.gate.context import Context
+from sharley.gate.git import GhHost
+from sharley.gate.watch import watch_once
 from sharley.gate.report import exit_code, github_annotation, render
 from sharley.intake import IntakeInput, build_spec
 from sharley.intake.files import load_codebase
 from sharley.judge import IndependenceError, load_bank
+from sharley.runner.docker import IMAGES
 from sharley.schemas import ModelRef, Spec, TestBank
 
 OK, FAILED, USAGE, INCOMPLETE = 0, 1, 2, 3
@@ -44,6 +49,14 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--implementer-model", required=True)
     c.add_argument("--implementer-family", required=True)
     c.add_argument("--json", action="store_true")
+    w = sub.add_parser("watch", help="judge merged changes; open a revert PR when sealed tests fail")
+    w.add_argument("--bank-file", type=Path, required=True)
+    w.add_argument("--repo-path", type=Path, default=Path("."))
+    w.add_argument("--stack", choices=["nextjs", "docker-api"], default="docker-api")
+    w.add_argument("--implementer-model", required=True)
+    w.add_argument("--implementer-family", required=True)
+    w.add_argument("--interval", type=int, default=0, help="seconds between polls; 0 = run once")
+    sub.add_parser("images", help="build the sandbox runner images")
     return p
 
 
@@ -94,7 +107,30 @@ def cmd_check(a, ctx: Context, out: TextIO) -> int:
     return exit_code(v)
 
 
-COMMANDS: dict[str, Callable] = {"spec": cmd_spec, "bank": cmd_bank, "check": cmd_check}
+def cmd_watch(a, ctx: Context, out: TextIO, host=None, sleep=time.sleep) -> int:
+    bank = TestBank.model_validate_json(a.bank_file.read_text())
+    host = host or GhHost(a.repo_path)
+    impl = ModelRef(provider="external", model=a.implementer_model, family=a.implementer_family)
+    while True:
+        for r in watch_once(host=host, bank=bank, sandbox=ctx.sandbox, stack=a.stack, implementer=impl, repo=ctx.repo):
+            print(f"PR #{r.change.pr} ({r.change.sha[:8]}): {r.status}" + (f" -> revert {r.revert_url}" if r.revert_url else ""), file=out)
+        if not a.interval:
+            return OK
+        sleep(a.interval)
+
+
+def cmd_images(a, ctx: Context, out: TextIO) -> int:
+    img = Path(__file__).resolve().parents[1] / "runner" / "images"
+    for stack, dockerfile in (("docker-api", "python.Dockerfile"), ("nextjs", "node.Dockerfile")):
+        r = subprocess.run(["docker", "build", "-q", "-f", str(img / dockerfile), "-t", IMAGES[stack], str(img)])
+        print(f"{IMAGES[stack]}: {'built' if r.returncode == 0 else 'FAILED'}", file=out)
+        if r.returncode:
+            return FAILED
+    return OK
+
+
+COMMANDS: dict[str, Callable] = {"spec": cmd_spec, "bank": cmd_bank, "check": cmd_check, "watch": cmd_watch,
+                                 "images": cmd_images}
 
 
 def main(argv: list[str] | None = None, env: Mapping[str, str] | None = None, out: TextIO | None = None,

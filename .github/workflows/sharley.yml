@@ -1,0 +1,30 @@
+# Merge gate: judges a PR against the sealed tests. Add SHARLEY_BANK_JSON (the sealed bank) as a repository
+# secret, and SHARLEY_IMPLEMENTER_MODEL / SHARLEY_IMPLEMENTER_FAMILY as repository variables.
+# Without the secret this workflow is a no-op, so forks and fresh clones stay green.
+name: sharley
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    env:
+      SHARLEY_BANK_JSON: ${{ secrets.SHARLEY_BANK_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: armed
+        run: echo "yes=$([ -n "$SHARLEY_BANK_JSON" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - if: steps.armed.outputs.yes == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - if: steps.armed.outputs.yes == 'true'
+        run: pip install "git+https://github.com/nikhilkulkarni1755/sharley.git" && sharley images
+      - if: steps.armed.outputs.yes == 'true'
+        env:
+          SHARLEY_OFFLINE: "1"
+        run: |
+          printf '%s' "$SHARLEY_BANK_JSON" > "$RUNNER_TEMP/bank.json"
+          sharley check --bank-file "$RUNNER_TEMP/bank.json" --workspace . \
+            --implementer-model "${{ vars.SHARLEY_IMPLEMENTER_MODEL }}" \
+            --implementer-family "${{ vars.SHARLEY_IMPLEMENTER_FAMILY }}" | tee "$GITHUB_STEP_SUMMARY"
