@@ -185,3 +185,21 @@ def test_load_codebase_skips_secrets_binaries_vendor_and_symlinks(tmp_path):
     files = load_codebase(tmp_path)
     assert set(files) == {"app.py", ".env.example"}
     assert "sk-real" not in json.dumps(files)
+
+
+# ---- .env loading
+def test_dotenv_parsing_skips_comments_blanks_and_empty_values(tmp_path):
+    from sharley.gate.context import read_dotenv
+    f = tmp_path / ".env"
+    f.write_text('# c\nA=1\nB=\n  C = "two words" \nbad line\n1X=nope\nD=x=y\n')
+    assert read_dotenv(f) == {"A": "1", "C": "two words", "D": "x=y"}
+    assert read_dotenv(tmp_path / "missing") == {}
+
+
+def test_real_environment_beats_dotenv_and_blank_template_values_never_blank_it(tmp_path):
+    from sharley.gate.context import load_env
+    f = tmp_path / ".env"
+    f.write_text("ANTHROPIC_API_KEY=from-file\nMETA_API_KEY=\nLOCAL_LLM_URL=http://file\n")
+    env = load_env({"ANTHROPIC_API_KEY": "from-shell"}, f)
+    assert env["ANTHROPIC_API_KEY"] == "from-shell" and env["LOCAL_LLM_URL"] == "http://file"
+    assert "META_API_KEY" not in env
