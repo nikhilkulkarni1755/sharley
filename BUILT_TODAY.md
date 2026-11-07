@@ -14,3 +14,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 | Test generator | `sharley/generator/` | #8 |
 | Planner + queue + workers | `sharley/planner/` | #9 |
 | Sandbox runner (local Docker) | `sharley/runner/` | #10 |
+| Judge (sealed tests + verdicts) | `sharley/judge/` | #12 |
