@@ -28,7 +28,7 @@ PROFILES: dict[str, Profile] = {
                           health_path="/health", test_cmds=["pytest -q tests"], port=8000),
 }
 
-_PY_WEB = re.compile(r"^\s*(fastapi|flask|django|starlette|aiohttp)\b", re.I | re.M)
+_PY_WEB = re.compile(r"(?<![\w-])(fastapi|flask|django|starlette|aiohttp)(?![\w-])", re.I)
 
 
 def detect_stack(files: dict[str, str]) -> StackName | None:
