@@ -1,0 +1,43 @@
+---CMD LINE OUTPUT---
++ python -m sharley spec --repo flask/examples/tutorial --out spec.json
+20 requirements (14 observed, 6 inferred), coverage 100.0%, spec 0ff1e38327e4 -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live2/flask-tutorial/spec.json
+exit=0
+
++ python -m sharley bank --spec spec.json --repo flask/examples/tutorial --workspace impl --stack docker-api --bank-out bank.json
+error: requirements without tests: ['R9']; unknown refs: []
+exit=3
+
++ python fid.py   (do the generated tests call real routes?)
+
++ python -m sharley spend
+spent $2.3696 of $15.00 cap over 20 calls
+  meta: $1.7089 (4552 in / 33267 out tokens)
+  anthropic: $0.6607 (15260 in / 63018 out tokens)
+
++ requirements (id, category, evidence, text)
+coverage 100.0 assumptions 6
+R1 functional observed - System shall serve the blog index at GET /
+R2 functional observed - System shall serve a hello response at GET /hello
+R3 functional observed - System shall serve post creation at GET /create
+R4 functional observed - System shall serve post update for a post id at GET /<int:id>/update
+R5 functional observed - System shall delete the specified post at GET /<int:id>/delete
+R6 functional observed - System shall serve user registration at GET /register
+R7 functional observed - System shall serve user login at GET /login
+R8 functional observed - System shall log out the current user at GET /logout
+R9 functional observed - System shall retrieve a single post by id via get_post
+R10 functional observed - System shall load the logged-in user from the session on requests via load_logged_in_user
+R11 data observed - System shall persist user records as defined by user schema
+R12 data observed - System shall persist post records as defined by post schema
+R13 deployment observed - System shall provide create_app application factory
+R14 deployment observed - System shall provide init_db_command CLI command to initialize the database
+R15 security inferred - System shall require authentication for creating posts
+R16 security inferred - System shall require authentication for updating and deleting posts
+R17 security inferred - System shall enforce ownership so only the post author can update or delete the post
+R18 security inferred - System shall store passwords only as salted hashes and never in plaintext
+R19 security inferred - System shall validate post id is an integer, verify the post exists, and return 404 when not found
+R20 security inferred - System shall validate registration, login, create and update inputs and reject empty or malformed values
+
+---SUMMARY---
+Flask tutorial, v2. spec exit 0: 20 requirements (14 observed, 6 inferred), coverage 100%. bank exit 3 (refused): 'requirements without tests: R9' (R9 = 'retrieve a single post by id via get_post', an internal function).
+This is the traceability gate working: with the new 'never invent a path' rule the writer correctly skipped a requirement that is not reachable over HTTP, and Sharley refused to ship an incomplete bank rather than hide the gap.
+Open issue: requirements derived from internal functions (R9, R10, R13, R14) cannot be HTTP-tested. Needed: a 'not testable, with reason' waiver instead of a hard failure. This app is server-rendered HTML, so the docker-api/JSON test style is a weak fit.

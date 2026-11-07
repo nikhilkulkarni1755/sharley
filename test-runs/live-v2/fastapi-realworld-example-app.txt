@@ -1,0 +1,66 @@
+---CMD LINE OUTPUT---
++ python -m sharley spec --repo fastapi-realworld-example-app --out spec.json
+37 requirements (31 observed, 6 inferred), coverage 100.0%, spec 23aa8debf223 -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live2/fastapi-realworld-example-app/spec.json
+exit=0
+
++ python -m sharley bank --spec spec.json --repo fastapi-realworld-example-app --workspace impl --stack docker-api --bank-out bank.json
+bank 23aa8debf2236d6328599f9149abb2b8f5c7aa5a05da69121aded5b0cf174b76:0: 33 example tests -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live2/fastapi-realworld-example-app/impl, 75 sealed (hidden)
+exit=0
+
++ python fid.py   (do the generated tests call real routes?)
+routes in surface: 19
+v2 ALL tests (108): path literals used 16, real 12, fidelity 75%
+v2 example tests (33): used 11, real 8, fidelity 73%
+v1 baseline example tests (30): used 25, real 3, fidelity 12%
+v2 invented paths (first 12): ['/', '/comments', '/favorite', '/health']
+
++ python -m sharley spend
+spent $7.7032 of $15.00 cap over 48 calls
+  meta: $5.8814 (20513 in / 113526 out tokens)
+  anthropic: $1.8217 (56064 in / 170960 out tokens)
+
++ requirements (id, category, evidence, text)
+coverage 100.0 assumptions 6
+R1 functional observed - System shall register a new user via POST /users
+R2 functional observed - System shall authenticate a user via POST /users/login
+R3 functional observed - System shall retrieve the current authenticated user via GET /user
+R4 functional observed - System shall update the current user via PUT /user
+R5 functional observed - System shall create a new article via POST /articles
+R6 functional observed - System shall list articles via GET /articles
+R7 functional observed - System shall return personalized user feed via GET /articles/feed
+R8 functional observed - System shall retrieve a single article by slug via GET /articles/{slug}
+R9 functional observed - System shall update an article via PUT /articles/{slug}
+R10 functional observed - System shall delete an article via DELETE /articles/{slug}
+R11 functional observed - System shall mark an article as favorite via POST /articles/{slug}/favorite
+R12 functional observed - System shall remove an article from favorites via DELETE /articles/{slug}/favorite
+R13 functional observed - System shall add a comment to an article via POST /articles/{slug}/comments
+R14 functional observed - System shall list comments for an article via GET /articles/{slug}/comments
+R15 functional observed - System shall delete a comment via DELETE /articles/{slug}/comments/{comment_id}
+R16 functional observed - System shall retrieve a user profile via GET /profiles/{username}
+R17 functional observed - System shall follow another user via POST /profiles/{username}/follow
+R18 functional observed - System shall unfollow another user via DELETE /profiles/{username}/follow
+R19 functional observed - System shall list all tags via GET /tags
+R20 security inferred - System shall require a valid JWT for GET /user
+R21 security inferred - System shall require authentication to access GET /articles/feed
+R22 security inferred - System shall require authentication to create, update, or delete articles
+R23 security inferred - System shall enforce that only the article author can update or delete the article
+R24 security inferred - System shall enforce that only the comment author can delete the comment
+R25 security inferred - System shall require authentication to favorite, unfavorite, comment, follow, and unfollow
+R26 security observed - System shall store passwords only as salted hashes and verify via hash comparison
+R27 security observed - System shall issue a JWT on register and login for subsequent authorization
+R28 security observed - System shall validate request input and return 422 on validation failure
+R29 data observed - System shall persist users, articles, comments, tags, favorites and follows in the database configured by DATABASE_URL
+R30 data observed - System shall link articles with tags including creating tags that do not exist
+R31 data observed - System shall manage database connections via a pool bounded by MIN_CONNECTION_COUNT and MAX_CONNECTION_COUNT
+R32 deployment observed - System shall run as a docker-api service
+R33 deployment observed - System shall build from base image python 3.9.10-slim
+R34 deployment observed - System shall expose port 8000
+R35 deployment observed - System shall run database migrations on startup via alembic upgrade head
+R36 deployment observed - System shall prefix API routes with API_PREFIX
+R37 deployment observed - System shall validate JWT authorization headers using JWT_TOKEN_PREFIX and SECRET_KEY
+
+---SUMMARY---
+fastapi-realworld-example-app, v2. spec exit 0: 37 requirements (31 observed, 6 inferred), coverage 100%. bank exit 0: 108 tests = 33 visible + 75 sealed.
+Surface fixes: 19 routes with prefixes (/articles/{slug}/comments/{comment_id}, /profiles/{username}/follow, /users/login) (was 12 unprefixed); 17 env vars (was 0); settings classes read through a custom base class.
+PATH FIDELITY: 75% of path literals real (12 of 16); example tests 73%. Before: 12% (3 of 25). Remaining misses are path fragments and the global /api prefix, which this app sets at runtime (settings.api_prefix) and static analysis cannot see.
+Not yet done: tests not run against the app (needs Postgres).

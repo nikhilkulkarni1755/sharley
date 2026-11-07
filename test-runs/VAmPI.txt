@@ -1,0 +1,75 @@
+---CMD LINE OUTPUT---
++ SHARLEY_OFFLINE=1 python -m sharley spec --repo VAmPI --out spec.json
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/__main__.py", line 5, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/gate/cli.py", line 158, in main
+    return COMMANDS[args.cmd](args, context_factory(env), out)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/gate/cli.py", line 73, in cmd_spec
+    spec = build_spec(ctx.verifier, inp, long_chain=ctx.long_context if ctx.long_context.healthy.get("subq") else None,
+                      repo=ctx.repo)
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/intake/pipeline.py", line 42, in build_spec
+    raw = propose(chain, source, stack, long_chain=long_chain, chunk_chars=chunk_chars)
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/intake/extract.py", line 66, in propose
+    for r in EXTRACT.run(chain, ExtractIn(text=part, stack=stack)).requirements:
+             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/harness/step.py", line 66, in run
+    raise StepFailed(f"step {self.name} failed: " + (" | ".join(errors[-4:]) or "no healthy providers"))
+sharley.harness.step.StepFailed: step extract_requirements failed: no healthy providers
+exit=1
+
++ python det.py VAmPI   (stack detection, codebase summary, env check)
+files loaded: 22, chars: 69582
+Stack: docker-api
+Functions:
+- __init__
+- __repr__
+- add_new_book
+- basic
+- custom_problem_handler
+- debug
+- decode_auth_token
+- delete_user
+- encode_auth_token
+- error_message_helper
+- get_all_books
+- get_all_users
+- get_all_users_debug
+- get_by_title
+- get_by_username
+- get_user
+- init_db_users
+- json
+- json_debug
+- login_user
+- me
+- populate_db
+- register_user
+- token_validator
+- update_email
+- update_password
+Schemas:
+- Book
+- User
+Dockerfile:
+- FROM python:3.11-alpine as builder
+- FROM python:3.11-alpine
+- ENV vulnerable=1
+- ENV tokentimetolive=60
+- ENTRYPOINT ["python"]
+- CMD ["app.py"]
+env referenced: []
+env missing from .env.example: []
+env undeclared in deploy config: []
+exit=0
+
+---SUMMARY---
+Repo: erev0s/VAmPI (520 source lines). Files read: 22 (70k chars). Stack: docker-api (correct).
+sharley spec: FAILED, exit 1 - 'no healthy providers' (offline, no LOCAL_LLM_URL, no keys). No requirements/coverage produced.
+Deterministic stages: 0 routes found (routes live in an OpenAPI YAML served via connexion; parser only reads decorators).
+Functions 26, schemas Book and User found. No env vars; Dockerfile ENV vulnerable=1 / tokentimetolive=60 are not treated as config.
+Gaps: OpenAPI-spec route parsing.

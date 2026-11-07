@@ -1,0 +1,62 @@
+---CMD LINE OUTPUT---
++ python -m sharley spec --repo full-stack-fastapi-template --out spec.json
+33 requirements (27 observed, 6 inferred), coverage 100.0%, spec d00f74415bac -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live2/full-stack-fastapi-template/spec.json
+exit=0
+
++ python -m sharley bank --spec spec.json --repo full-stack-fastapi-template --workspace impl --stack docker-api --bank-out bank.json
+bank d00f74415baca23d9df74450c90091da771377a7d455b2af0179af70c866066e:0: 36 example tests -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live2/full-stack-fastapi-template/impl, 86 sealed (hidden)
+exit=0
+
++ python fid.py   (do the generated tests call real routes?)
+routes in surface: 23
+v2 ALL tests (122): path literals used 14, real 12, fidelity 86%
+v2 example tests (36): used 12, real 11, fidelity 92%
+v1 baseline example tests (35): used 18, real 9, fidelity 50%
+v2 invented paths (first 12): ['/', '/health']
+
++ python -m sharley spend
+spent $4.9773 of $15.00 cap over 33 calls
+  meta: $3.7707 (10658 in / 73282 out tokens)
+  anthropic: $1.2066 (34217 in / 113814 out tokens)
+
++ requirements (id, category, evidence, text)
+coverage 100.0 assumptions 6
+R1 functional observed - System shall create a new item when receiving POST /items/ with a valid payload.
+R2 functional observed - System shall list items when receiving GET /items/.
+R3 functional observed - System shall return a single item by id when receiving GET /items/{id} for an existing id.
+R4 functional observed - System shall update an existing item when receiving PUT /items/{id}.
+R5 functional observed - System shall delete an existing item when receiving DELETE /items/{id}.
+R6 functional observed - System shall register a new public user when receiving POST /users/signup.
+R7 functional observed - System shall create a user when receiving POST /users/.
+R8 functional observed - System shall create a private user when receiving POST /private/users/.
+R9 functional observed - System shall list users when receiving GET /users/.
+R10 functional observed - System shall return a user by id when receiving GET /users/{user_id}.
+R11 functional observed - System shall return the current authenticated user profile when receiving GET /users/me.
+R12 functional observed - System shall update the current user profile when receiving PATCH /users/me.
+R13 functional observed - System shall delete the current user account when receiving DELETE /users/me.
+R14 functional observed - System shall update a user by id when receiving PATCH /users/{user_id}.
+R15 functional observed - System shall delete a user by id when receiving DELETE /users/{user_id}.
+R16 functional observed - System shall update the current user password when receiving PATCH /users/me/password.
+R17 functional observed - System shall issue an access token when receiving POST /login/access-token with valid credentials.
+R18 functional observed - System shall validate the caller token when receiving POST /login/test-token.
+R19 functional observed - System shall initiate password recovery when receiving POST /password-recovery/{email}.
+R20 functional observed - System shall return password-recovery HTML content when receiving POST /password-recovery-html-content/{email}.
+R21 functional observed - System shall reset the password when receiving POST /reset-password/ with a valid token and new password.
+R22 functional observed - System shall report service health when receiving GET /utils/health-check/.
+R23 functional observed - System shall send a test email when receiving POST /utils/test-email/.
+R24 security inferred - System shall require authentication for item create, list, read, update and delete operations.
+R25 security inferred - System shall enforce that only the item owner or a superuser can read, update or delete a specific item.
+R26 security inferred - System shall restrict listing users and managing arbitrary users to superusers.
+R27 security inferred - System shall store user passwords only as hashes and verify by hash comparison, never plaintext.
+R28 security inferred - System shall issue signed expiring access tokens and reject expired or invalid tokens.
+R29 security inferred - System shall validate request payloads and reject invalid emails, passwords and item fields.
+R30 data observed - System shall persist users and items in the database configured by DATABASE_URL.
+R31 data observed - System shall expire password-reset tokens after EMAIL_RESET_TOKEN_EXPIRE_HOURS.
+R32 deployment observed - System shall run the API using fastapi run with 4 workers.
+R33 deployment observed - System shall use python:3.14 as the runtime base image.
+
+---SUMMARY---
+full-stack-fastapi-template, v2. spec exit 0: 33 requirements (27 observed, 6 inferred), coverage 100%. bank exit 0: 122 tests = 36 visible + 86 sealed.
+Surface fixes: stack now detected as docker-api (was unknown, monorepo bug); 23 routes with real prefixes (/users/me, /items/{id}); 20 real env vars from the pydantic Settings class (was 4, all test/frontend noise); 16 schemas incl. SQLModel (was 1).
+PATH FIDELITY: 86% of path literals real (12 of 14); example tests 92%. Before: 50% (9 of 18). Non-routes: / and /health.
+Not yet done: tests not run against the app (needs Postgres + backend deps).

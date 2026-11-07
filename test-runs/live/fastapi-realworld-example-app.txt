@@ -1,0 +1,85 @@
+---CMD LINE OUTPUT---
++ python -m sharley spec --repo fastapi-realworld-example-app --out spec.json
+32 requirements (30 observed, 2 inferred), coverage 100.0%, spec 477ce6a973bd -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live/fastapi-realworld-example-app/spec.json
+exit=0
+
++ python -m sharley bank --spec spec.json --workspace impl --stack docker-api
+bank 477ce6a973bd262f5484d2e54677fb4a3e6828477bc4cf1802b7a95d0f730e7b:0: 30 example tests -> /private/tmp/claude-501/-Users-nikhilkulkarni-hackathons-AI-Engineer-Cerebral-Valley/5c6c24f5-5396-4451-b4e7-373b028d614f/scratchpad/baseline/live/fastapi-realworld-example-app/impl, 69 sealed (hidden)
+exit=0
+
++ requirements (id, category, evidence, text)
+coverage 100.0 assumptions 2
+R1 functional observed - Provide an endpoint DELETE /{comment_id} that deletes a comment by its ID.
+R2 functional observed - Provide an endpoint DELETE /{slug} that deletes an article identified by its slug.
+R3 functional observed - Provide an endpoint POST /{slug}/favorite that adds an article to the current user's favorites.
+R4 functional observed - Provide an endpoint DELETE /{slug}/favorite that removes an article from the current user's favorites.
+R5 functional observed - Provide an endpoint POST /{username}/follow that lets the current user follow another user.
+R6 functional observed - Provide an endpoint DELETE /{username}/follow that lets the current user unfollow another user.
+R7 functional observed - Provide an endpoint GET /feed that returns articles from users the current user follows, and an empty list if the user follows no one.
+R8 functional observed - Provide an endpoint GET /{slug} that retrieves an article by its slug.
+R9 functional observed - Provide an endpoint GET /{username} that retrieves a user's profile, showing no following state for unregistered viewers.
+R10 functional observed - Provide an endpoint PUT /{slug} that updates an article identified by its slug.
+R11 functional observed - Provide an endpoint POST /login that authenticates a user with credentials and returns a JWT access token.
+R12 functional observed - Support user registration, rejecting registration when the username or email is already taken.
+R13 functional observed - Support listing articles with filtering by tags, authors, and favorited, plus limit and offset pagination.
+R14 functional observed - Support creating comments on articles, listing comments for an article, and deleting comments.
+R15 functional observed - Support listing all tags; new tags attached to an article are created without duplication, and an article contains only its attached tags.
+R16 functional observed - Allow an authenticated user to change their password.
+R17 functional observed - Return datetimes in the RealWorld format in API responses.
+R18 functional observed - Return validation errors in a consistent format via a 422 error handler.
+R19 security inferred - Require authentication via a JWT in the Authorization header for write endpoints such as delete, update, favorite and follow.
+R20 security observed - Reject requests with an invalid token, a malformed token, or a wrong JWT prefix with an error.
+R21 security observed - Reject authentication when the user referenced by a token no longer exists.
+R22 security observed - Only the article's author may modify or delete the article; others are denied.
+R23 security observed - Only the comment's author may delete the comment; others are denied.
+R24 security observed - Store passwords as salted hashes and verify them with a password check function, never in plaintext.
+R25 security inferred - Validate request input (e.g., article, user update, filter parameters) with typed schemas.
+R26 data observed - Persist users, articles, tags, article-tag links, favorites, followers, and comments in database tables managed by migrations.
+R27 data observed - Maintain an updated_at timestamp on records using a database trigger.
+R28 data observed - Use a database connection pool created at application startup and closed at shutdown.
+R29 deployment observed - Run the application in a Docker container based on python:3.9.10-slim.
+R30 deployment observed - Expose port 8000 from the container.
+R31 deployment observed - Run alembic database migrations (upgrade head) on container start before launching the app.
+R32 deployment observed - Disable Python output buffering in the container.
+
++ example tests written to workspace
+impl/SHARLEY.md
+impl/sharley.yaml
+impl/tests/test_env_99.py
+impl/tests/test_functional_1.py
+impl/tests/test_functional_12.py
+impl/tests/test_functional_13.py
+impl/tests/test_functional_16.py
+impl/tests/test_functional_25.py
+impl/tests/test_functional_28.py
+impl/tests/test_functional_34.py
+impl/tests/test_functional_37.py
+impl/tests/test_functional_38.py
+impl/tests/test_functional_39.py
+impl/tests/test_functional_4.py
+impl/tests/test_functional_42.py
+impl/tests/test_functional_46.py
+impl/tests/test_functional_49.py
+impl/tests/test_functional_5.py
+impl/tests/test_functional_50.py
+impl/tests/test_functional_54.py
+impl/tests/test_functional_62.py
+impl/tests/test_functional_68.py
+impl/tests/test_functional_69.py
+impl/tests/test_functional_71.py
+impl/tests/test_functional_8.py
+impl/tests/test_security_75.py
+impl/tests/test_security_78.py
+impl/tests/test_security_83.py
+impl/tests/test_security_85.py
+impl/tests/test_security_86.py
+impl/tests/test_security_87.py
+impl/tests/test_security_91.py
+
+---SUMMARY---
+Repo: nsidnev/fastapi-realworld-example-app. Verifier: Claude (live). spec exit 0, bank exit 0.
+Spec: 32 requirements (30 observed, 2 inferred), coverage 100%. Categories: 18 functional, 7 security, 3 data, 4 deployment. Stack: docker-api.
+Bank: 99 tests = 30 example (visible) + 69 sealed (hidden), including 1 deterministic env test (test_env_99); all requirements traced. Highest observed ratio (30/32) of the four, as expected for the best-documented codebase.
+Gap: same path guessing; route prefixes (/api/articles etc.) are not resolved by the parser, so even a fixed writer would see /{slug}. Not run against the app.
+
+OVERALL (all 4): intake and test generation work with the real model and are fast enough (a few minutes per repo including 4 parallel writers). The main finding is that for existing codebases the tests are not anchored to the real API surface. Fix order: (1) pass the parsed routes/schemas into the test-writer step, (2) parse OpenAPI files and router prefixes, (3) boot each repo in the sandbox and report the false-failure rate of the generated tests on the unmodified repo.

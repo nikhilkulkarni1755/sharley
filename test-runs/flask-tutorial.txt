@@ -1,0 +1,91 @@
+---CMD LINE OUTPUT---
++ SHARLEY_OFFLINE=1 python -m sharley spec --repo flask/examples/tutorial --out spec.json
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/__main__.py", line 5, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/gate/cli.py", line 158, in main
+    return COMMANDS[args.cmd](args, context_factory(env), out)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/gate/cli.py", line 73, in cmd_spec
+    spec = build_spec(ctx.verifier, inp, long_chain=ctx.long_context if ctx.long_context.healthy.get("subq") else None,
+                      repo=ctx.repo)
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/intake/pipeline.py", line 42, in build_spec
+    raw = propose(chain, source, stack, long_chain=long_chain, chunk_chars=chunk_chars)
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/intake/extract.py", line 66, in propose
+    for r in EXTRACT.run(chain, ExtractIn(text=part, stack=stack)).requirements:
+             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/harness/step.py", line 66, in run
+    raise StepFailed(f"step {self.name} failed: " + (" | ".join(errors[-4:]) or "no healthy providers"))
+sharley.harness.step.StepFailed: step extract_requirements failed: no healthy providers
+exit=1
+
++ python det.py flask/examples/tutorial   (stack detection, codebase summary, env check)
+files loaded: 22, chars: 26124
+Stack: unknown
+Routes:
+- GET /
+- GET /<int:id>/delete
+- GET /<int:id>/update
+- GET /create
+- GET /hello
+- GET /login
+- GET /logout
+- GET /register
+Functions:
+- __init__
+- app
+- auth
+- client
+- close_db
+- create
+- create_app
+- delete
+- fake_init_db
+- get_db
+- get_post
+- hello
+- index
+- init_app
+- init_db
+- init_db_command
+- load_logged_in_user
+- login
+- login_required
+- logout
+- register
+- runner
+- test_author_required
+- test_config
+- test_create
+- test_create_update_validate
+- test_delete
+- test_exists_required
+- test_get_close_db
+- test_hello
+- test_index
+- test_init_db_command
+- test_login
+- test_login_required
+- test_login_validate_input
+- test_logout
+- test_register
+- test_register_validate_input
+- test_update
+- update
+- wrapped_view
+Schemas:
+- post
+- user
+env referenced: []
+env missing from .env.example: []
+env undeclared in deploy config: []
+exit=0
+
+---SUMMARY---
+Repo: pallets/flask, examples/tutorial only. Files read: 22 (26k chars). Stack: unknown (no Dockerfile/package.json; outside the two supported profiles).
+sharley spec: FAILED, exit 1 - 'no healthy providers'. No requirements/coverage produced.
+Deterministic stages: 8 routes, all correct (/, /create, /<id>/update, /<id>/delete, /login, /logout, /register, /hello). Schemas post, user from SQL. No env vars.
+Gaps: test functions mixed into the function list; Flask with no Docker is not a supported stack.

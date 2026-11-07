@@ -1,0 +1,230 @@
+---CMD LINE OUTPUT---
++ SHARLEY_OFFLINE=1 python -m sharley spec --repo full-stack-fastapi-template --out spec.json
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/__main__.py", line 5, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/gate/cli.py", line 158, in main
+    return COMMANDS[args.cmd](args, context_factory(env), out)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/gate/cli.py", line 73, in cmd_spec
+    spec = build_spec(ctx.verifier, inp, long_chain=ctx.long_context if ctx.long_context.healthy.get("subq") else None,
+                      repo=ctx.repo)
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/intake/pipeline.py", line 42, in build_spec
+    raw = propose(chain, source, stack, long_chain=long_chain, chunk_chars=chunk_chars)
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/intake/extract.py", line 66, in propose
+    for r in EXTRACT.run(chain, ExtractIn(text=part, stack=stack)).requirements:
+             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nikhilkulkarni/hackathons/AI_Engineer_Cerebral_Valley/sharley/sharley/harness/step.py", line 66, in run
+    raise StepFailed(f"step {self.name} failed: " + (" | ".join(errors[-4:]) or "no healthy providers"))
+sharley.harness.step.StepFailed: step extract_requirements failed: no healthy providers
+exit=1
+
++ python det.py full-stack-fastapi-template   (stack detection, codebase summary, env check)
+files loaded: 236, chars: 852778
+Stack: unknown
+Routes:
+- DELETE /me
+- DELETE /{id}
+- DELETE /{user_id}
+- GET /
+- GET /health-check/
+- GET /me
+- GET /{id}
+- GET /{user_id}
+- PATCH /me
+- PATCH /me/password
+- PATCH /{user_id}
+- POST /
+- POST /login/access-token
+- POST /login/test-token
+- POST /password-recovery-html-content/{email}
+- POST /password-recovery/{email}
+- POST /reset-password/
+- POST /signup
+- POST /test-email/
+- POST /users/
+- PUT /{id}
+Functions:
+- Admin
+- Alert
+- AlertDescription
+- AlertTitle
+- Avatar
+- AvatarFallback
+- AvatarImage
+- Badge
+- Button
+- ButtonGroup
+- ButtonGroupSeparator
+- ButtonGroupText
+- Card
+- CardAction
+- CardContent
+- CardDescription
+- CardFooter
+- CardHeader
+- CardTitle
+- Checkbox
+- CopyId
+- Dashboard
+- Dialog
+- DialogClose
+- DialogContent
+- DialogDescription
+- DialogFooter
+- DialogHeader
+- DialogOverlay
+- DialogPortal
+- DialogTitle
+- DialogTrigger
+- DropdownMenu
+- DropdownMenuCheckboxItem
+- DropdownMenuContent
+- DropdownMenuGroup
+- DropdownMenuItem
+- DropdownMenuLabel
+- DropdownMenuPortal
+- DropdownMenuRadioGroup
+- DropdownMenuRadioItem
+- DropdownMenuSeparator
+- DropdownMenuShortcut
+- DropdownMenuSub
+- DropdownMenuSubContent
+- DropdownMenuSubTrigger
+- DropdownMenuTrigger
+- FormControl
+- FormDescription
+- FormItem
+- FormLabel
+- FormMessage
+- Input
+- Items
+- ItemsTable
+- ItemsTableContent
+- Label
+- Layout
+- LoadingButton
+- Login
+- Pagination
+- PaginationContent
+- PaginationEllipsis
+- PaginationItem
+- PaginationLink
+- PaginationNext
+- PaginationPrevious
+- RecoverPassword
+- ResetPassword
+- Select
+- SelectContent
+- SelectGroup
+- SelectItem
+- SelectLabel
+- SelectScrollDownButton
+- SelectScrollUpButton
+- SelectSeparator
+- SelectTrigger
+- SelectValue
+- Separator
+- Sheet
+- SheetClose
+- SheetContent
+- SheetDescription
+- SheetFooter
+- SheetHeader
+- SheetOverlay
+- SheetPortal
+- SheetTitle
+- SheetTrigger
+- Sidebar
+- SidebarContent
+- SidebarFooter
+- SidebarGroup
+- SidebarGroupAction
+- SidebarGroupContent
+- SidebarGroupLabel
+- SidebarHeader
+- SidebarInput
+- SidebarInset
+- SidebarMenu
+- SidebarMenuAction
+- SidebarMenuBadge
+- SidebarMenuButton
+- SidebarMenuItem
+- SidebarMenuSkeleton
+- SidebarMenuSub
+- SidebarMenuSubButton
+- SidebarMenuSubItem
+- SidebarProvider
+- SidebarRail
+- SidebarSeparator
+- SidebarTrigger
+- SignUp
+- Skeleton
+- Table
+- TableBody
+- TableCaption
+- TableCell
+- TableFooter
+- TableHead
+- TableHeader
+- TableRow
+- Tabs
+- TabsContent
+- TabsList
+- TabsTrigger
+- Tooltip
+- TooltipContent
+- TooltipProvider
+- TooltipTrigger
+- UserInfo
+- UserSettings
+- UsersTable
+- UsersTableContent
+- _check_default_secret
+- _enforce_non_default_secrets
+- _set_default_emails_from
+- _use_psycopg_driver
+- authenticate
+- authentication_token_from_email
+- bump_version
+- client
+- create_access_token
+- create_item
+- create_random_item
+- create_random_user
+- create_user
+- current_version
+- custom_generate_unique_id
+- ... and 118 more
+Schemas:
+- PrivateUserCreate
+Environment variables:
+- CI
+- MAILPIT_HOST
+- PLAYWRIGHT_BASE_URL
+- VITE_API_URL
+Dockerfile:
+- FROM oven/bun:1 AS frontend-build
+- ARG VITE_API_URL=
+- FROM python:3.14
+- ENV PYTHONUNBUFFERED=1
+- ENV UV_COMPILE_BYTECODE=1
+- ENV UV_LINK_MODE=copy
+- ENV PATH="/app/.venv/bin:$PATH"
+- CMD ["fastapi", "run", "--workers", "4"]
+- FROM mcr.microsoft.com/playwright:v1.64.1-noble
+- ENV PATH="/root/.bun/bin:$PATH"
+env referenced: ['CI', 'MAILPIT_HOST', 'PLAYWRIGHT_BASE_URL', 'VITE_API_URL']
+env missing from .env.example: ['CI', 'MAILPIT_HOST', 'PLAYWRIGHT_BASE_URL', 'VITE_API_URL']
+env undeclared in deploy config: ['CI', 'MAILPIT_HOST', 'PLAYWRIGHT_BASE_URL']
+exit=0
+
+---SUMMARY---
+Repo: fastapi/full-stack-fastapi-template (14k source lines). Files read: 236 (853k chars). Stack: unknown - WRONG (backend/ has its own pyproject + Dockerfile; detection only checks repo root).
+sharley spec: FAILED, exit 1 - 'no healthy providers'. No requirements/coverage produced.
+Deterministic stages: 21 routes found. Only 1 schema (PrivateUserCreate); SQLModel classes not matched. ~268 functions, mostly React UI components.
+Env check: 4 vars (CI, MAILPIT_HOST, PLAYWRIGHT_BASE_URL, VITE_API_URL), all from tests/frontend; pydantic Settings-based config is missed.
+Gaps: monorepo stack detection, SQLModel schemas, Settings-class env vars, frontend noise.
