@@ -23,7 +23,7 @@ def local(env: Mapping[str, str]) -> OpenAICompatProvider:
 
 
 def meta(env: Mapping[str, str]) -> OpenAICompatProvider:
-    return OpenAICompatProvider("meta", "meta", cost_rank=4, api_key=env.get("META_API_KEY", ""),
+    return OpenAICompatProvider("meta", "meta", cost_rank=7, api_key=env.get("META_API_KEY", ""),
                                 base_url=env.get("META_BASE_URL", ""), model=env.get("META_MODEL", ""), meter=_meter(env))
 
 

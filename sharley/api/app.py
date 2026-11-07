@@ -20,6 +20,7 @@ from sharley.api.repos import run_repo_job
 from sharley.api.runs import RecordingSandbox, Run, RunRegistry, result_events
 from sharley.api.views import bank_view
 from sharley.gate import service
+from sharley.harness.budget import BudgetExceeded
 from sharley.gate.context import Context
 from sharley.implementer.agent import safe_target
 from sharley.intake import IntakeInput, build_spec
@@ -54,6 +55,7 @@ class RepoRequest(BaseModel):
 
 class BankRequest(BaseModel):
     spec_hash: str
+    allow_partial: bool = False
     stack: str = "docker-api"
     seed: int = 0
 
@@ -88,7 +90,7 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard
         try:
             spec = build_spec(ctx.verifier, IntakeInput(text=req.text), repo=ctx.repo)
         except Exception as e:  # provider chain exhausted etc: a clear retryable message, never a stack trace
-            raise HTTPException(status_code=503, detail=f"intake failed, please retry: {type(e).__name__}") from None
+            raise HTTPException(status_code=503, detail=_provider_failure("intake", e)) from None
         return {**spec.model_dump(), "active_provider": ctx.verifier.active}
 
     @app.post("/api/specs/image")
@@ -99,7 +101,7 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard
         except ValueError as e:  # bad base64, not PNG/JPEG, too large, unreadable
             raise HTTPException(status_code=422, detail=str(e)) from None
         except Exception as e:
-            raise HTTPException(status_code=503, detail=f"intake failed, please retry: {type(e).__name__}") from None
+            raise HTTPException(status_code=503, detail=_provider_failure("intake", e)) from None
         return {**spec.model_dump(), "active_provider": ctx.verifier.active}
 
     @app.post("/api/banks")
@@ -110,11 +112,12 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard
         if req.stack not in PROFILES:
             raise HTTPException(status_code=422, detail="unsupported stack")
         try:
-            bank = service.make_bank(Spec.model_validate(doc), ctx.repo, ctx.verifier, stack=req.stack, seed=req.seed)
+            bank = service.make_bank(Spec.model_validate(doc), ctx.repo, ctx.verifier, stack=req.stack, seed=req.seed,
+                                     allow_partial=req.allow_partial)
         except service.IncompleteBank as e:
             raise HTTPException(status_code=422, detail=str(e)) from None
         except Exception as e:
-            raise HTTPException(status_code=503, detail=f"test generation failed, please retry: {type(e).__name__}") from None
+            raise HTTPException(status_code=503, detail=_provider_failure("test generation", e)) from None
         return bank_view(bank)
 
     @app.get("/api/banks/{key}")
@@ -239,6 +242,13 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard
         return json.loads(DEMO_FIXTURE.read_text())
 
     return app
+
+
+def _provider_failure(what: str, e: Exception) -> str:
+    """Retrying cannot fix an exhausted spend cap, so say so; anything else is retryable."""
+    if isinstance(e, BudgetExceeded) or "spend cap" in str(e):
+        return "the server's spend cap has been reached; ask the operator to raise it"
+    return f"{what} failed, please retry: {type(e).__name__}"
 
 
 def _execute(ctx: Context, bank, workspace: Path, req: RunRequest, run: Run, rejected: list[str], guard: Guard) -> None:

@@ -304,3 +304,62 @@ def test_cors_origin_regex_allows_tunnel_urls_and_nothing_else(tmp_path):
     bad = c.get("/api/health", headers={"Origin": "https://evil.trycloudflare.com.attacker.io"})
     assert ok.headers.get("access-control-allow-origin") == "https://quiet-fox-123.trycloudflare.com"
     assert "access-control-allow-origin" not in bad.headers
+
+
+# ---- bank contract: partial banks and spend-cap messaging
+class PartialWriter(EchoWriter):
+    """Writes a test for the first requirement only, so the bank is incomplete."""
+
+    def complete(self, system, user, *, images=None):
+        out = super().complete(system, user, images=images)
+        if "QA engineer" in system or "security tester" in system:
+            d = json.loads(out)
+            d["tests"] = d["tests"][:1] if "R1" in user and "R2" not in user.split("R1", 1)[0] else []
+            return json.dumps(d)
+        return out
+
+
+def _partial_client(tmp_path):
+    ctx = Context(env={}, repo=JsonRepository(tmp_path / "db"), verifier=FallbackChain([PartialWriter(EXTRACT)]),
+                  long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FakeSandbox())
+    return TestClient(create_app(ctx))
+
+
+def test_incomplete_bank_is_422_until_the_caller_accepts_a_partial_bank(tmp_path):
+    c = _partial_client(tmp_path)
+    spec = c.post("/api/specs", json={"text": "Users create notes and never read other notes."}).json()
+    strict = c.post("/api/banks", json={"spec_hash": spec["spec_hash"]})
+    assert strict.status_code == 422 and strict.json()["detail"].startswith("requirements without tests:")
+    partial = c.post("/api/banks", json={"spec_hash": spec["spec_hash"], "allow_partial": True})
+    assert partial.status_code == 200 and partial.json()["examples"] is not None
+
+
+def test_exhausted_spend_cap_is_a_clear_503_not_a_misleading_incomplete_bank(tmp_path):
+    from sharley.harness.budget import BudgetExceeded
+
+    class Capped(EchoWriter):
+        def complete(self, system, user, *, images=None):
+            if "QA engineer" in system or "security tester" in system:
+                raise BudgetExceeded("spend cap reached ($22.00 of $22.00)")
+            return super().complete(system, user, images=images)
+
+    ctx = Context(env={}, repo=JsonRepository(tmp_path / "db"), verifier=FallbackChain([Capped(EXTRACT)]),
+                  long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FakeSandbox())
+    c = TestClient(create_app(ctx))
+    spec = c.post("/api/specs", json={"text": "Users create notes and never read other notes."}).json()
+    r = c.post("/api/banks", json={"spec_hash": spec["spec_hash"]})
+    assert r.status_code == 503 and r.json()["detail"].startswith("the server's spend cap has been reached")
+    assert "retry" not in r.json()["detail"]
+
+
+def test_intake_reports_an_exhausted_cap_the_same_way(tmp_path):
+    from sharley.harness.budget import BudgetExceeded
+
+    class Dead(ScriptedProvider):
+        def complete(self, system, user, *, images=None):
+            raise BudgetExceeded("spend cap reached")
+
+    ctx = Context(env={}, repo=JsonRepository(tmp_path), verifier=FallbackChain([Dead("d")]),
+                  long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FakeSandbox())
+    r = TestClient(create_app(ctx)).post("/api/specs", json={"text": "a thing to build please"})
+    assert r.status_code == 503 and "spend cap" in r.json()["detail"] and "retry" not in r.json()["detail"]

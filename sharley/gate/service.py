@@ -4,6 +4,7 @@ from pathlib import Path
 from sharley.harness import FallbackChain
 from sharley.judge import export_workspace, judge, save_bank, split_bank
 from sharley.planner import TraceReport, generate_test_cases
+from sharley.planner.workers import DEFAULT_WORKERS
 from sharley.profiles import build_contract
 from sharley.runner.base import Sandbox
 from sharley.schemas import ModelRef, Spec, TestBank, Verdict
@@ -20,7 +21,7 @@ class IncompleteBank(RuntimeError):
 
 def make_bank(spec: Spec, repo: Repository, chain: FallbackChain, *, stack: StackName | None = None,
               files: dict[str, str] | None = None, rules: list[str] | None = None, seed: int = 0,
-              workers: int = 4, allow_partial: bool = False, scope: str = "global") -> TestBank:
+              workers: int = DEFAULT_WORKERS, allow_partial: bool = False, scope: str = "global") -> TestBank:
     """rules=None means: use the skills Sharley has adopted so far (global, plus this scope's overlay)."""
     if rules is None:
         rules = SkillStore(repo, scope).active_rules()
