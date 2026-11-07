@@ -5,3 +5,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 
 | Component | Path | PR |
 |---|---|---|
+| Typed schemas | `sharley/schemas/` | #1 |
