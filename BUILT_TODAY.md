@@ -22,3 +22,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 | Merge gate watch + GitHub Action | `sharley/gate/watch.py, .github/workflows/sharley.yml` | #17 |
 | Implementer agent | `sharley/implementer/` | #18 |
 | HTTP API + SSE | `sharley/api/` | #19 |
+| Demo fixtures (real Docker runs) | `evals/fixtures/` | #23 |

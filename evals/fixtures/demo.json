@@ -1,0 +1,679 @@
+{
+  "meta": {
+    "source": "oracle-stand-in",
+    "generated_at": "2026-11-07T19:50:31+00:00",
+    "note": "the LLM test writer is replaced by a deterministic stand-in (skill rules unlock subsets of the hand-written oracle suite). Mutant kills, false failures, scores, the sealed verdict and every adopt/rollback decision are computed for real, in the Docker sandbox. Re-run with provider keys to replace the stand-in."
+  },
+  "spec": {
+    "version": 1,
+    "stack": "docker-api",
+    "source_hash": "4eea4b42b7d6901d34ca0286e5e9626e4a1dc21abcb15d1e390e15b3f45ed679",
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "A username is 3-32 letters, digits or underscore and unique",
+        "category": "functional",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "a username (3-32 letters, digits or underscore)",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R2",
+        "text": "A password must be at least 8 characters",
+        "category": "functional",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "a password of at least 8 characters",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R3",
+        "text": "Logging in with the right password returns a token; a wrong one is rejected",
+        "category": "functional",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "Wrong passwords are rejected",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R4",
+        "text": "After 5 failed logins in a minute the account is locked out",
+        "category": "security",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "after 5 failed logins in a minute the account is locked out",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R5",
+        "text": "A note has a title of 1-100 characters and an optional body up to 10000 characters",
+        "category": "functional",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "a title (1-100 chars) and an optional body (up to 10000 chars)",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R6",
+        "text": "Users can list, search by title and page through their notes (default 20, max 100)",
+        "category": "functional",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "list their notes, search by title, and page through them (default 20, max 100 per page)",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R7",
+        "text": "Users can read, edit and delete a note by id",
+        "category": "functional",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "read, edit and delete a note by id",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R8",
+        "text": "Each user can only see and change their own notes",
+        "category": "security",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "Each user must only ever see and change their own notes",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R9",
+        "text": "Everything except signup, login and health requires a valid token",
+        "category": "security",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "Everything except signup, login and the health check needs a valid token",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R10",
+        "text": "Errors must not expose internals such as stack traces",
+        "category": "security",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "Errors must not expose internals like stack traces",
+          "assumption_id": null
+        }
+      },
+      {
+        "id": "R11",
+        "text": "User input must never be able to alter database queries",
+        "category": "security",
+        "evidence": {
+          "kind": "inferred",
+          "source_span": null,
+          "assumption_id": "A1"
+        }
+      },
+      {
+        "id": "R12",
+        "text": "GET /health returns 200 when the service is running",
+        "category": "deployment",
+        "evidence": {
+          "kind": "observed",
+          "source_span": "GET /health returning 200 when it is running",
+          "assumption_id": null
+        }
+      }
+    ],
+    "assumptions": {
+      "A1": "Any SQL-backed service must be safe from injection"
+    },
+    "ignored": [],
+    "coverage_pct": 100.0,
+    "spec_hash": "ba073c473893e575b2ad6e466fbd22c325d8cfd2efa816897177013ba3048216"
+  },
+  "spec_text": "Notes app. People sign up with a username (3-32 letters, digits or underscore) and a password of at least 8 characters,\nthen log in to get a token. Wrong passwords are rejected, and after 5 failed logins in a minute the account is locked out\nfor a while. Logged-in users can create notes with a title (1-100 chars) and an optional body (up to 10000 chars).\nThey can list their notes, search by title, and page through them (default 20, max 100 per page). They can read, edit\nand delete a note by id. Each user must only ever see and change their own notes, never anyone else's. Everything except\nsignup, login and the health check needs a valid token. Errors must not expose internals like stack traces. The service\nexposes GET /health returning 200 when it is running and ships in a Docker container.\n",
+  "bank": {
+    "key": "ba073c473893e575b2ad6e466fbd22c325d8cfd2efa816897177013ba3048216:7",
+    "spec_hash": "ba073c473893e575b2ad6e466fbd22c325d8cfd2efa816897177013ba3048216",
+    "seed": 7,
+    "author": {
+      "provider": "oracle",
+      "model": "hand-written-suite",
+      "family": "human"
+    },
+    "examples": [
+      {
+        "id": "T7",
+        "name": "test_r4_lockout",
+        "family": "security",
+        "requirement_ids": [
+          "R4"
+        ],
+        "file": "tests/test_r4_lockout.py",
+        "code": "# reqs: R4\n# hint: repeated failed logins do not lock the account\nimport os\nimport uuid\n\nimport httpx\n\nBASE = os.environ[\"BASE_URL\"]\n\n\ndef client():\n    return httpx.Client(base_url=BASE, timeout=10)\n\n\ndef new_user(cl, password=\"password123\"):\n    name = \"u\" + uuid.uuid4().hex[:10]\n    assert cl.post(\"/auth/signup\", json={\"username\": name, \"password\": password}).status_code == 201\n    token = cl.post(\"/auth/login\", json={\"username\": name, \"password\": password}).json()[\"token\"]\n    return name, {\"Authorization\": \"Bearer \" + token}\n\n\ndef add_note(cl, auth, title=\"t\", body=\"b\"):\n    r = cl.post(\"/notes\", json={\"title\": title, \"body\": body}, headers=auth)\n    assert r.status_code == 201\n    return r.json()[\"id\"]\n\ndef test_lockout_after_five_failures_even_with_right_password():\n    with client() as cl:\n        name, _ = new_user(cl)\n        for _ in range(5):\n            assert cl.post(\"/auth/login\", json={\"username\": name, \"password\": \"wrongpass1\"}).status_code == 401\n        assert cl.post(\"/auth/login\", json={\"username\": name, \"password\": \"password123\"}).status_code == 429\n\n\ndef test_four_failures_do_not_lock():\n    with client() as cl:\n        name, _ = new_user(cl)\n        for _ in range(4):\n            cl.post(\"/auth/login\", json={\"username\": name, \"password\": \"wrongpass1\"})\n        assert cl.post(\"/auth/login\", json={\"username\": name, \"password\": \"password123\"}).status_code == 200\n"
+      },
+      {
+        "id": "T9",
+        "name": "test_r6_list_search_paging",
+        "family": "functional",
+        "requirement_ids": [
+          "R6"
+        ],
+        "file": "tests/test_r6_list_search_paging.py",
+        "code": "# reqs: R6\n# hint: listing, searching or paging notes is wrong\nimport os\nimport uuid\n\nimport httpx\n\nBASE = os.environ[\"BASE_URL\"]\n\n\ndef client():\n    return httpx.Client(base_url=BASE, timeout=10)\n\n\ndef new_user(cl, password=\"password123\"):\n    name = \"u\" + uuid.uuid4().hex[:10]\n    assert cl.post(\"/auth/signup\", json={\"username\": name, \"password\": password}).status_code == 201\n    token = cl.post(\"/auth/login\", json={\"username\": name, \"password\": password}).json()[\"token\"]\n    return name, {\"Authorization\": \"Bearer \" + token}\n\n\ndef add_note(cl, auth, title=\"t\", body=\"b\"):\n    r = cl.post(\"/notes\", json={\"title\": title, \"body\": body}, headers=auth)\n    assert r.status_code == 201\n    return r.json()[\"id\"]\n\ndef test_list_returns_only_own_notes_in_order():\n    with client() as cl:\n        _, auth = new_user(cl)\n        ids = [add_note(cl, auth, title=f\"note{i}\") for i in range(3)]\n        assert [n[\"id\"] for n in cl.get(\"/notes\", headers=auth).json()] == ids\n\n\ndef test_search_by_title():\n    with client() as cl:\n        _, auth = new_user(cl)\n        add_note(cl, auth, title=\"groceries\")\n        add_note(cl, auth, title=\"work\")\n        assert [n[\"title\"] for n in cl.get(\"/notes\", params={\"q\": \"groc\"}, headers=auth).json()] == [\"groceries\"]\n\n\ndef test_paging_defaults_and_limits():\n    with client() as cl:\n        _, auth = new_user(cl)\n        for i in range(25):\n            add_note(cl, auth, title=f\"n{i}\")\n        assert len(cl.get(\"/notes\", headers=auth).json()) == 20\n        assert len(cl.get(\"/notes\", params={\"limit\": 100}, headers=auth).json()) == 25\n        assert cl.get(\"/notes\", params={\"limit\": 101}, headers=auth).status_code == 422\n        assert cl.get(\"/notes\", params={\"limit\": 0}, headers=auth).status_code == 422\n        assert cl.get(\"/notes\", params={\"offset\": -1}, headers=auth).status_code == 422\n        assert len(cl.get(\"/notes\", params={\"limit\": 10, \"offset\": 20}, headers=auth).json()) == 5\n        assert len(cl.get(\"/notes\", params={\"limit\": 1}, headers=auth).json()) == 1\n"
+      },
+      {
+        "id": "T10",
+        "name": "test_r7_read_update_delete",
+        "family": "functional",
+        "requirement_ids": [
+          "R7"
+        ],
+        "file": "tests/test_r7_read_update_delete.py",
+        "code": "# reqs: R7\n# hint: reading, editing or deleting a note by id is wrong\nimport os\nimport uuid\n\nimport httpx\n\nBASE = os.environ[\"BASE_URL\"]\n\n\ndef client():\n    return httpx.Client(base_url=BASE, timeout=10)\n\n\ndef new_user(cl, password=\"password123\"):\n    name = \"u\" + uuid.uuid4().hex[:10]\n    assert cl.post(\"/auth/signup\", json={\"username\": name, \"password\": password}).status_code == 201\n    token = cl.post(\"/auth/login\", json={\"username\": name, \"password\": password}).json()[\"token\"]\n    return name, {\"Authorization\": \"Bearer \" + token}\n\n\ndef add_note(cl, auth, title=\"t\", body=\"b\"):\n    r = cl.post(\"/notes\", json={\"title\": title, \"body\": body}, headers=auth)\n    assert r.status_code == 201\n    return r.json()[\"id\"]\n\ndef test_read_update_delete_roundtrip():\n    with client() as cl:\n        _, auth = new_user(cl)\n        nid = add_note(cl, auth, title=\"a\", body=\"b\")\n        assert cl.get(f\"/notes/{nid}\", headers=auth).json() == {\"id\": nid, \"title\": \"a\", \"body\": \"b\"}\n        up = cl.put(f\"/notes/{nid}\", json={\"title\": \"a2\", \"body\": \"b2\"}, headers=auth)\n        assert up.status_code == 200 and up.json()[\"title\"] == \"a2\"\n        assert cl.get(f\"/notes/{nid}\", headers=auth).json()[\"body\"] == \"b2\"\n        assert cl.delete(f\"/notes/{nid}\", headers=auth).status_code == 204\n        assert cl.get(f\"/notes/{nid}\", headers=auth).status_code == 404\n\n\ndef test_update_validates_input_and_missing_note_is_404():\n    with client() as cl:\n        _, auth = new_user(cl)\n        nid = add_note(cl, auth)\n        assert cl.put(f\"/notes/{nid}\", json={\"title\": \"\", \"body\": \"\"}, headers=auth).status_code == 422\n        assert cl.put(\"/notes/999999999\", json={\"title\": \"t\", \"body\": \"\"}, headers=auth).status_code == 404\n        assert cl.delete(\"/notes/999999999\", headers=auth).status_code == 404\n"
+      },
+      {
+        "id": "T12",
+        "name": "test_r9_auth_required",
+        "family": "security",
+        "requirement_ids": [
+          "R9"
+        ],
+        "file": "tests/test_r9_auth_required.py",
+        "code": "# reqs: R9\n# hint: some endpoints work without a valid token\nimport os\nimport uuid\n\nimport httpx\n\nBASE = os.environ[\"BASE_URL\"]\n\n\ndef client():\n    return httpx.Client(base_url=BASE, timeout=10)\n\n\ndef new_user(cl, password=\"password123\"):\n    name = \"u\" + uuid.uuid4().hex[:10]\n    assert cl.post(\"/auth/signup\", json={\"username\": name, \"password\": password}).status_code == 201\n    token = cl.post(\"/auth/login\", json={\"username\": name, \"password\": password}).json()[\"token\"]\n    return name, {\"Authorization\": \"Bearer \" + token}\n\n\ndef add_note(cl, auth, title=\"t\", body=\"b\"):\n    r = cl.post(\"/notes\", json={\"title\": title, \"body\": body}, headers=auth)\n    assert r.status_code == 201\n    return r.json()[\"id\"]\n\ndef test_protected_routes_reject_missing_or_bad_tokens():\n    with client() as cl:\n        _, auth = new_user(cl)\n        nid = add_note(cl, auth)\n        for bad in ({}, {\"Authorization\": \"Bearer nope\"}, {\"Authorization\": \"Basic abc\"}, {\"Authorization\": \"Bearer x\"}):\n            assert cl.get(\"/notes\", headers=bad).status_code == 401\n            assert cl.post(\"/notes\", json={\"title\": \"t\", \"body\": \"\"}, headers=bad).status_code == 401\n            assert cl.get(f\"/notes/{nid}\", headers=bad).status_code == 401\n            assert cl.put(f\"/notes/{nid}\", json={\"title\": \"t\", \"body\": \"\"}, headers=bad).status_code == 401\n            assert cl.delete(f\"/notes/{nid}\", headers=bad).status_code == 401\n\n\ndef test_public_routes_need_no_token():\n    with client() as cl:\n        assert cl.get(\"/health\").status_code == 200\n"
+      }
+    ],
+    "sealed": [
+      {
+        "index": 1,
+        "family": "security",
+        "locked": true
+      },
+      {
+        "index": 2,
+        "family": "functional",
+        "locked": true
+      },
+      {
+        "index": 3,
+        "family": "functional",
+        "locked": true
+      },
+      {
+        "index": 4,
+        "family": "functional",
+        "locked": true
+      },
+      {
+        "index": 5,
+        "family": "security",
+        "locked": true
+      },
+      {
+        "index": 6,
+        "family": "env",
+        "locked": true
+      },
+      {
+        "index": 7,
+        "family": "security",
+        "locked": true
+      },
+      {
+        "index": 8,
+        "family": "functional",
+        "locked": true
+      }
+    ]
+  },
+  "events": [
+    {
+      "type": "example",
+      "id": "T7",
+      "name": "test_r4_lockout",
+      "passed": true
+    },
+    {
+      "type": "example",
+      "id": "T9",
+      "name": "test_r6_list_search_paging",
+      "passed": true
+    },
+    {
+      "type": "example",
+      "id": "T10",
+      "name": "test_r7_read_update_delete",
+      "passed": true
+    },
+    {
+      "type": "example",
+      "id": "T12",
+      "name": "test_r9_auth_required",
+      "passed": true
+    },
+    {
+      "type": "sealed",
+      "index": 1,
+      "passed": true
+    },
+    {
+      "type": "sealed",
+      "index": 2,
+      "passed": true
+    },
+    {
+      "type": "sealed",
+      "index": 3,
+      "passed": true
+    },
+    {
+      "type": "sealed",
+      "index": 4,
+      "passed": true
+    },
+    {
+      "type": "sealed",
+      "index": 5,
+      "passed": false
+    },
+    {
+      "type": "sealed",
+      "index": 6,
+      "passed": true
+    },
+    {
+      "type": "sealed",
+      "index": 7,
+      "passed": true
+    },
+    {
+      "type": "sealed",
+      "index": 8,
+      "passed": true
+    },
+    {
+      "type": "verdict",
+      "verdict": {
+        "status": "Wrong Answer",
+        "failed_test_index": 5,
+        "total_sealed": 8,
+        "requirement_ids": [
+          "R8"
+        ],
+        "hint": "users can read each other's notes",
+        "example_passed": 4,
+        "example_total": 4,
+        "implementer": {
+          "provider": "gemini",
+          "model": "gemini-4-argon",
+          "family": "google"
+        },
+        "verifier": {
+          "provider": "oracle",
+          "model": "hand-written-suite",
+          "family": "human"
+        },
+        "seed": 7,
+        "spec_hash": "ba073c473893e575b2ad6e466fbd22c325d8cfd2efa816897177013ba3048216"
+      },
+      "summary": "Wrong Answer on sealed test 5 of 8: users can read each other's notes (R8)",
+      "rejected_paths": []
+    }
+  ],
+  "eval": {
+    "mutants": [
+      {
+        "id": "M001",
+        "operator": "drop_validation",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M002",
+        "operator": "flip_conditional",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M003",
+        "operator": "off_by_one",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M004",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M005",
+        "operator": "drop_validation",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M006",
+        "operator": "off_by_one",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M007",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M008",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M009",
+        "operator": "disable_rate_limit",
+        "category": "security",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M010",
+        "operator": "off_by_one",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M011",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M012",
+        "operator": "string_concat_sql",
+        "category": "security",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M013",
+        "operator": "flip_conditional",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M014",
+        "operator": "skip_password_check",
+        "category": "security",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M015",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M016",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M017",
+        "operator": "leak_stack_trace",
+        "category": "security",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M018",
+        "operator": "remove_auth_check",
+        "category": "security",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M019",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M020",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M022",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M023",
+        "operator": "drop_validation",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M024",
+        "operator": "flip_conditional",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M025",
+        "operator": "off_by_one",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M026",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M027",
+        "operator": "drop_validation",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M028",
+        "operator": "off_by_one",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M029",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M031",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M032",
+        "operator": "flip_conditional",
+        "category": "functional",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M033",
+        "operator": "missing_ownership_check",
+        "category": "security",
+        "split": "heldout",
+        "killed": true
+      },
+      {
+        "id": "M034",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M035",
+        "operator": "flip_conditional",
+        "category": "functional",
+        "split": "train",
+        "killed": false
+      },
+      {
+        "id": "M037",
+        "operator": "wrong_status_code",
+        "category": "functional",
+        "split": "heldout",
+        "killed": false
+      },
+      {
+        "id": "M038",
+        "operator": "drop_owner_filter",
+        "category": "security",
+        "split": "train",
+        "killed": true
+      },
+      {
+        "id": "M039",
+        "operator": "string_concat_sql",
+        "category": "security",
+        "split": "train",
+        "killed": true
+      }
+    ],
+    "reference": {
+      "tests": 11,
+      "failed": 0
+    },
+    "scores": {
+      "heldout_mutation_score": 0.9333333333333333,
+      "false_failure_rate": 0.0,
+      "security_kill_rate": 1.0,
+      "production_worthy": 0.9333333333333333
+    }
+  },
+  "timeline": [
+    {
+      "version": 0,
+      "parent": null,
+      "rules": [],
+      "diff": "",
+      "scores": {
+        "heldout_mutation_score": 0.6,
+        "false_failure_rate": 0.0,
+        "security_kill_rate": 0.125,
+        "production_worthy": 0.6
+      },
+      "decision": "baseline",
+      "reason": ""
+    },
+    {
+      "version": 1,
+      "parent": 0,
+      "rules": [
+        "Always test ownership and authentication on every resource endpoint."
+      ],
+      "diff": "--- parent\n+++ candidate\n@@ -0,0 +1 @@\n+Always test ownership and authentication on every resource endpoint.",
+      "scores": {
+        "heldout_mutation_score": 0.7333333333333333,
+        "false_failure_rate": 0.0,
+        "security_kill_rate": 0.5,
+        "production_worthy": 0.7333333333333333
+      },
+      "decision": "adopted",
+      "reason": "held-out production-worthy score rose 0.600 -> 0.733"
+    },
+    {
+      "version": 2,
+      "parent": 1,
+      "rules": [
+        "Always test ownership and authentication on every resource endpoint.",
+        "Re-send every request with different header casing."
+      ],
+      "diff": "--- parent\n+++ candidate\n@@ -1,0 +2 @@\n+Re-send every request with different header casing.",
+      "scores": {
+        "heldout_mutation_score": 0.7333333333333333,
+        "false_failure_rate": 0.0,
+        "security_kill_rate": 0.5,
+        "production_worthy": 0.7333333333333333
+      },
+      "decision": "rolled_back",
+      "reason": "held-out production-worthy score 0.733 did not beat 0.733 by more than 0.01"
+    },
+    {
+      "version": 3,
+      "parent": 1,
+      "rules": [
+        "Always test ownership and authentication on every resource endpoint.",
+        "Probe rate limits, error bodies and injection on every public input."
+      ],
+      "diff": "--- parent\n+++ candidate\n@@ -1,0 +2 @@\n+Probe rate limits, error bodies and injection on every public input.",
+      "scores": {
+        "heldout_mutation_score": 0.9333333333333333,
+        "false_failure_rate": 0.0,
+        "security_kill_rate": 1.0,
+        "production_worthy": 0.9333333333333333
+      },
+      "decision": "adopted",
+      "reason": "held-out production-worthy score rose 0.733 -> 0.933"
+    },
+    {
+      "version": 4,
+      "parent": 3,
+      "rules": [
+        "Always test ownership and authentication on every resource endpoint.",
+        "Probe rate limits, error bodies and injection on every public input.",
+        "Hammer every endpoint with random payloads and expect 400 for any invalid one."
+      ],
+      "diff": "--- parent\n+++ candidate\n@@ -2,0 +3 @@\n+Hammer every endpoint with random payloads and expect 400 for any invalid one.",
+      "scores": {
+        "heldout_mutation_score": 1.0,
+        "false_failure_rate": 0.08333333333333333,
+        "security_kill_rate": 1.0,
+        "production_worthy": 0.9166666666666666
+      },
+      "decision": "rolled_back",
+      "reason": "false failure rate rose from 0.00 to 0.08"
+    }
+  ]
+}

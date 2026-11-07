@@ -55,3 +55,18 @@ class RunRegistry:
 
     def get(self, run_id: str) -> Run | None:
         return self.runs.get(run_id)
+
+
+def result_events(bank, report, verdict, rejected: list[str]) -> list[dict]:
+    """The SSE event stream for one judged run: example tiles, sealed tiles (position only), then the verdict."""
+    from sharley.judge import ordered_sealed
+
+    events = []
+    if report is not None and report.results:
+        by_id = {r.test_id: r for r in report.results}
+        events += [{"type": "example", "id": t.id, "name": t.name, "passed": bool(by_id.get(t.id) and by_id[t.id].passed)}
+                   for t in bank.examples]
+        events += [{"type": "sealed", "index": i, "passed": bool(by_id.get(t.id) and by_id[t.id].passed)}
+                   for i, t in enumerate(ordered_sealed(bank), 1)]
+    events.append({"type": "verdict", "verdict": verdict.model_dump(), "summary": verdict.summary(), "rejected_paths": rejected})
+    return events
