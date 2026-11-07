@@ -1,0 +1,1379 @@
+{
+ "meta": {
+  "source": "hand-made sample for the web board tests",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "note": "sample notes-API run"
+ },
+ "spec": {
+  "version": 1,
+  "stack": "docker-api",
+  "source_hash": "3f9a1c0be72d4a58",
+  "requirements": [
+   {
+    "id": "R1",
+    "text": "Users can sign up with an email and password.",
+    "category": "functional",
+    "evidence": {
+     "kind": "observed",
+     "source_span": "sign up with email and password",
+     "assumption_id": null
+    }
+   },
+   {
+    "id": "R2",
+    "text": "Users can log in and receive a session token.",
+    "category": "functional",
+    "evidence": {
+     "kind": "observed",
+     "source_span": "log in",
+     "assumption_id": null
+    }
+   },
+   {
+    "id": "R3",
+    "text": "Authenticated users can create a note with a title and body.",
+    "category": "functional",
+    "evidence": {
+     "kind": "observed",
+     "source_span": "create notes",
+     "assumption_id": null
+    }
+   },
+   {
+    "id": "R4",
+    "text": "Users can list their notes, newest first.",
+    "category": "functional",
+    "evidence": {
+     "kind": "inferred",
+     "source_span": null,
+     "assumption_id": "A2"
+    }
+   },
+   {
+    "id": "R5",
+    "text": "Users can edit and delete their own notes.",
+    "category": "functional",
+    "evidence": {
+     "kind": "observed",
+     "source_span": "edit or delete a note",
+     "assumption_id": null
+    }
+   },
+   {
+    "id": "R6",
+    "text": "Passwords are never stored or returned in plaintext.",
+    "category": "security",
+    "evidence": {
+     "kind": "inferred",
+     "source_span": null,
+     "assumption_id": "A3"
+    }
+   },
+   {
+    "id": "R7",
+    "text": "Unauthenticated requests to note endpoints return 401.",
+    "category": "security",
+    "evidence": {
+     "kind": "observed",
+     "source_span": "only logged-in users",
+     "assumption_id": null
+    }
+   },
+   {
+    "id": "R8",
+    "text": "A user can never read, edit or delete another user's notes.",
+    "category": "security",
+    "evidence": {
+     "kind": "inferred",
+     "source_span": null,
+     "assumption_id": "A1"
+    }
+   },
+   {
+    "id": "R9",
+    "text": "Note bodies are limited to 10,000 characters.",
+    "category": "data",
+    "evidence": {
+     "kind": "observed",
+     "source_span": "10,000 characters",
+     "assumption_id": null
+    }
+   },
+   {
+    "id": "R10",
+    "text": "The service starts with docker compose up and exposes port 8000.",
+    "category": "deployment",
+    "evidence": {
+     "kind": "observed",
+     "source_span": "docker compose up",
+     "assumption_id": null
+    }
+   }
+  ],
+  "assumptions": {
+   "A1": "Notes are private to their owner; the brief never says they can be shared.",
+   "A2": "Lists are ordered by creation time because no order was specified.",
+   "A3": "Standard practice: credentials are hashed, and hashes never leave the server."
+  },
+  "ignored": [
+   {
+    "span": "make it feel snappy",
+    "reason": "Subjective; not testable without a latency target."
+   },
+   {
+    "span": "maybe add dark mode later",
+    "reason": "Out of scope for an API."
+   }
+  ],
+  "coverage_pct": 88.0,
+  "spec_hash": "b41e07d95ac3c216e8f0",
+  "active_provider": "anthropic"
+ },
+ "bank": {
+  "key": "b41e07d95ac3c216e8f0:0",
+  "spec_hash": "b41e07d95ac3c216e8f0",
+  "seed": 0,
+  "author": {
+   "provider": "anthropic",
+   "model": "claude-sonnet",
+   "family": "anthropic"
+  },
+  "examples": [
+   {
+    "id": "ex1",
+    "name": "test_signup_creates_user",
+    "family": "functional",
+    "requirement_ids": [
+     "R1"
+    ],
+    "file": "tests/test_signup_creates_user.py",
+    "code": "def test_signup_creates_user(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex2",
+    "name": "test_signup_rejects_duplicate_email",
+    "family": "functional",
+    "requirement_ids": [
+     "R1"
+    ],
+    "file": "tests/test_signup_rejects_duplicate_email.py",
+    "code": "def test_signup_rejects_duplicate_email(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex3",
+    "name": "test_login_returns_token",
+    "family": "functional",
+    "requirement_ids": [
+     "R2"
+    ],
+    "file": "tests/test_login_returns_token.py",
+    "code": "def test_login_returns_token(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex4",
+    "name": "test_login_wrong_password_401",
+    "family": "security",
+    "requirement_ids": [
+     "R2",
+     "R6"
+    ],
+    "file": "tests/test_login_wrong_password_401.py",
+    "code": "def test_login_wrong_password_401(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex5",
+    "name": "test_create_note",
+    "family": "functional",
+    "requirement_ids": [
+     "R3"
+    ],
+    "file": "tests/test_create_note.py",
+    "code": "def test_create_note(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex6",
+    "name": "test_list_notes_newest_first",
+    "family": "functional",
+    "requirement_ids": [
+     "R4"
+    ],
+    "file": "tests/test_list_notes_newest_first.py",
+    "code": "def test_list_notes_newest_first(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex7",
+    "name": "test_edit_own_note",
+    "family": "functional",
+    "requirement_ids": [
+     "R5"
+    ],
+    "file": "tests/test_edit_own_note.py",
+    "code": "def test_edit_own_note(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex8",
+    "name": "test_delete_own_note",
+    "family": "functional",
+    "requirement_ids": [
+     "R5"
+    ],
+    "file": "tests/test_delete_own_note.py",
+    "code": "def test_delete_own_note(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex9",
+    "name": "test_notes_require_auth",
+    "family": "security",
+    "requirement_ids": [
+     "R7"
+    ],
+    "file": "tests/test_notes_require_auth.py",
+    "code": "def test_notes_require_auth(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex10",
+    "name": "test_body_over_limit_rejected",
+    "family": "functional",
+    "requirement_ids": [
+     "R9"
+    ],
+    "file": "tests/test_body_over_limit_rejected.py",
+    "code": "def test_body_over_limit_rejected(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex11",
+    "name": "test_password_not_in_response",
+    "family": "security",
+    "requirement_ids": [
+     "R6"
+    ],
+    "file": "tests/test_password_not_in_response.py",
+    "code": "def test_password_not_in_response(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   },
+   {
+    "id": "ex12",
+    "name": "test_service_listens_on_8000",
+    "family": "env",
+    "requirement_ids": [
+     "R10"
+    ],
+    "file": "tests/test_service_listens_on_8000.py",
+    "code": "def test_service_listens_on_8000(client):\n    resp = client.post('/signup', json={'email': 'a@example.com', 'password': 'pw-12345'})\n    assert resp.status_code in (200, 201)\n"
+   }
+  ],
+  "sealed": [
+   {
+    "index": 1,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 2,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 3,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 4,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 5,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 6,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 7,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 8,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 9,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 10,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 11,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 12,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 13,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 14,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 15,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 16,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 17,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 18,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 19,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 20,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 21,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 22,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 23,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 24,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 25,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 26,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 27,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 28,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 29,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 30,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 31,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 32,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 33,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 34,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 35,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 36,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 37,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 38,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 39,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 40,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 41,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 42,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 43,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 44,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 45,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 46,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 47,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 48,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 49,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 50,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 51,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 52,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 53,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 54,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 55,
+    "family": "security",
+    "locked": true
+   },
+   {
+    "index": 56,
+    "family": "env",
+    "locked": true
+   },
+   {
+    "index": 57,
+    "family": "functional",
+    "locked": true
+   },
+   {
+    "index": 58,
+    "family": "security",
+    "locked": true
+   }
+  ]
+ },
+ "events": [
+  {
+   "type": "example",
+   "id": "ex1",
+   "name": "test_signup_creates_user",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex2",
+   "name": "test_signup_rejects_duplicate_email",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex3",
+   "name": "test_login_returns_token",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex4",
+   "name": "test_login_wrong_password_401",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex5",
+   "name": "test_create_note",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex6",
+   "name": "test_list_notes_newest_first",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex7",
+   "name": "test_edit_own_note",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex8",
+   "name": "test_delete_own_note",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex9",
+   "name": "test_notes_require_auth",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex10",
+   "name": "test_body_over_limit_rejected",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex11",
+   "name": "test_password_not_in_response",
+   "passed": true
+  },
+  {
+   "type": "example",
+   "id": "ex12",
+   "name": "test_service_listens_on_8000",
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 1,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 2,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 3,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 4,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 5,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 6,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 7,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 8,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 9,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 10,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 11,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 12,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 13,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 14,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 15,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 16,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 17,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 18,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 19,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 20,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 21,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 22,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 23,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 24,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 25,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 26,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 27,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 28,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 29,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 30,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 31,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 32,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 33,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 34,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 35,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 36,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 37,
+   "passed": false
+  },
+  {
+   "type": "sealed",
+   "index": 38,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 39,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 40,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 41,
+   "passed": false
+  },
+  {
+   "type": "sealed",
+   "index": 42,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 43,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 44,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 45,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 46,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 47,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 48,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 49,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 50,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 51,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 52,
+   "passed": false
+  },
+  {
+   "type": "sealed",
+   "index": 53,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 54,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 55,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 56,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 57,
+   "passed": true
+  },
+  {
+   "type": "sealed",
+   "index": 58,
+   "passed": true
+  },
+  {
+   "type": "verdict",
+   "verdict": {
+    "status": "Wrong Answer",
+    "failed_test_index": 37,
+    "total_sealed": 58,
+    "requirement_ids": [
+     "R8"
+    ],
+    "hint": "users can read each other's notes",
+    "example_passed": 12,
+    "example_total": 12,
+    "implementer": {
+     "provider": "external",
+     "model": "gpt-5",
+     "family": "openai"
+    },
+    "verifier": {
+     "provider": "anthropic",
+     "model": "claude-sonnet",
+     "family": "anthropic"
+    },
+    "seed": 0,
+    "spec_hash": "b41e07d95ac3c216e8f0"
+   },
+   "summary": "Wrong Answer on sealed test 37 of 58: users can read each other's notes (R8)",
+   "rejected_paths": []
+  }
+ ],
+ "eval": {
+  "mutants": [
+   {
+    "id": "m01",
+    "operator": "off_by_one",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m02",
+    "operator": "return_early",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m03",
+    "operator": "swap_order",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m04",
+    "operator": "skip_owner_filter",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m05",
+    "operator": "remove_hash",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m06",
+    "operator": "drop_validation",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m07",
+    "operator": "drop_auth_check",
+    "category": "security",
+    "split": "train",
+    "killed": false
+   },
+   {
+    "id": "m08",
+    "operator": "negate_condition",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m09",
+    "operator": "widen_limit",
+    "category": "security",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m10",
+    "operator": "swap_comparison",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m11",
+    "operator": "off_by_one",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m12",
+    "operator": "return_early",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m13",
+    "operator": "swap_order",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m14",
+    "operator": "skip_owner_filter",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m15",
+    "operator": "remove_hash",
+    "category": "security",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m16",
+    "operator": "drop_validation",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m17",
+    "operator": "drop_auth_check",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m18",
+    "operator": "negate_condition",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m19",
+    "operator": "widen_limit",
+    "category": "security",
+    "split": "train",
+    "killed": false
+   },
+   {
+    "id": "m20",
+    "operator": "swap_comparison",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m21",
+    "operator": "off_by_one",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m22",
+    "operator": "return_early",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m23",
+    "operator": "swap_order",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m24",
+    "operator": "skip_owner_filter",
+    "category": "security",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m25",
+    "operator": "remove_hash",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m26",
+    "operator": "drop_validation",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m27",
+    "operator": "drop_auth_check",
+    "category": "security",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m28",
+    "operator": "negate_condition",
+    "category": "functional",
+    "split": "train",
+    "killed": false
+   },
+   {
+    "id": "m29",
+    "operator": "widen_limit",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m30",
+    "operator": "swap_comparison",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m31",
+    "operator": "off_by_one",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m32",
+    "operator": "return_early",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m33",
+    "operator": "swap_order",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m34",
+    "operator": "skip_owner_filter",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m35",
+    "operator": "remove_hash",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m36",
+    "operator": "drop_validation",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m37",
+    "operator": "drop_auth_check",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m38",
+    "operator": "negate_condition",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m39",
+    "operator": "widen_limit",
+    "category": "security",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m40",
+    "operator": "swap_comparison",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m41",
+    "operator": "off_by_one",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m42",
+    "operator": "return_early",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m43",
+    "operator": "swap_order",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m44",
+    "operator": "skip_owner_filter",
+    "category": "security",
+    "split": "train",
+    "killed": false
+   },
+   {
+    "id": "m45",
+    "operator": "remove_hash",
+    "category": "security",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m46",
+    "operator": "drop_validation",
+    "category": "functional",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m47",
+    "operator": "drop_auth_check",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m48",
+    "operator": "negate_condition",
+    "category": "functional",
+    "split": "heldout",
+    "killed": true
+   },
+   {
+    "id": "m49",
+    "operator": "widen_limit",
+    "category": "security",
+    "split": "train",
+    "killed": true
+   },
+   {
+    "id": "m50",
+    "operator": "swap_comparison",
+    "category": "functional",
+    "split": "train",
+    "killed": null
+   }
+  ],
+  "reference": {
+   "tests": 70,
+   "failed": 0
+  },
+  "scores": {
+   "heldout_mutation_score": 0.94,
+   "false_failure_rate": 0.04,
+   "security_kill_rate": 0.92,
+   "production_worthy": 0.9024
+  }
+ },
+ "timeline": [
+  {
+   "version": 0,
+   "parent": null,
+   "rules": [],
+   "diff": "",
+   "scores": {
+    "heldout_mutation_score": 0.62,
+    "false_failure_rate": 0.18,
+    "security_kill_rate": 0.4,
+    "production_worthy": 0.5084
+   },
+   "decision": "baseline",
+   "reason": "Starting skill, no rules."
+  },
+  {
+   "version": 1,
+   "parent": 0,
+   "rules": [
+    "Every endpoint touching user data must be tested with a second user's token.",
+    "Assert 401 before any business logic runs."
+   ],
+   "diff": "+ Every endpoint touching user data must be tested with a second user's token.\n+ Assert 401 before any business logic runs.",
+   "scores": {
+    "heldout_mutation_score": 0.78,
+    "false_failure_rate": 0.1,
+    "security_kill_rate": 0.71,
+    "production_worthy": 0.702
+   },
+   "decision": "adopted",
+   "reason": "Held-out production-worthy score rose 0.508 -> 0.702."
+  },
+  {
+   "version": 2,
+   "parent": 1,
+   "rules": [
+    "Prefer exact-string assertions on error messages."
+   ],
+   "diff": "+ Prefer exact-string assertions on error messages.",
+   "scores": {
+    "heldout_mutation_score": 0.79,
+    "false_failure_rate": 0.12,
+    "security_kill_rate": 0.72,
+    "production_worthy": 0.6952
+   },
+   "decision": "rolled_back",
+   "reason": "Held-out production-worthy score 0.695 did not beat 0.702 by more than 0.01; brittle message assertions raised false failures."
+  },
+  {
+   "version": 3,
+   "parent": 1,
+   "rules": [
+    "Check status codes and response shape, never message wording.",
+    "Cross-tenant reads, edits and deletes each need their own sealed test."
+   ],
+   "diff": "+ Check status codes and response shape, never message wording.\n+ Cross-tenant reads, edits and deletes each need their own sealed test.",
+   "scores": {
+    "heldout_mutation_score": 0.94,
+    "false_failure_rate": 0.04,
+    "security_kill_rate": 0.92,
+    "production_worthy": 0.9024
+   },
+   "decision": "adopted",
+   "reason": "Held-out production-worthy score rose 0.702 -> 0.902."
+  }
+ ]
+}

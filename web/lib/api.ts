@@ -1,0 +1,70 @@
+import type { Bank, Demo, Health, RunEvent, RunRequest, Spec } from "./types";
+
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const STACK = "docker-api";
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly retryable: boolean,
+  ) {
+    super(message);
+  }
+}
+
+export function friendlyMessage(status: number, detail: unknown): string {
+  const text = typeof detail === "string" ? detail : "the request was rejected";
+  if (status === 503) return `Provider unavailable, retry in a moment. (${text})`;
+  if (status === 422) return `Invalid input: ${text}`;
+  if (status === 413) return "That payload is too large.";
+  if (status === 404) return `Not found: ${text}`;
+  return `Request failed (${status}): ${text}`;
+}
+
+async function call<T>(path: string, body?: unknown): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method: body === undefined ? "GET" : "POST",
+      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError(`Cannot reach the API at ${API_URL}. Is it running?`, true);
+  }
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({}));
+    throw new ApiError(friendlyMessage(res.status, payload.detail), res.status >= 500);
+  }
+  return res.json();
+}
+
+export const getHealth = () => call<Health>("/api/health");
+export const getDemo = () => call<Demo>("/api/demo");
+export const createSpec = (text: string) => call<Spec>("/api/specs", { text });
+export const createSpecFromImage = (image_b64: string) => call<Spec>("/api/specs/image", { image_b64 });
+export const createBank = (spec_hash: string) => call<Bank>("/api/banks", { spec_hash, stack: STACK, seed: 0 });
+export const startRun = (req: RunRequest) =>
+  call<{ run_id: string; rejected_paths: string[] }>("/api/runs", req);
+
+const NAMED_EVENTS = ["example", "sealed", "verdict"];
+
+/** Streams run events; the server names each SSE event, so listen per type as well as on unnamed messages. */
+export function openRunEvents(runId: string, onEvent: (e: RunEvent) => void): () => void {
+  const source = new EventSource(`${API_URL}/api/runs/${runId}/events`);
+  const handle = (m: MessageEvent) => {
+    const event: RunEvent = JSON.parse(m.data);
+    onEvent(event);
+    if (event.type === "verdict" || event.type === "error") source.close();
+  };
+  source.onmessage = handle;
+  for (const type of NAMED_EVENTS) {
+    source.addEventListener(type, (m) => handle(m as MessageEvent));
+  }
+  source.addEventListener("error", (m) => {
+    if (m instanceof MessageEvent) return handle(m);
+    source.close();
+    onEvent({ type: "error", detail: "Lost connection to the event stream, retry." });
+  });
+  return () => source.close();
+}
