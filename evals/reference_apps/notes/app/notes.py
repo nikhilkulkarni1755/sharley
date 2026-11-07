@@ -39,9 +39,8 @@ def fetch_owned(user: dict, note_id: int):
 def list_notes(user: dict, q: str = "", limit: int = DEFAULT_LIMIT, offset: int = 0) -> list[dict]:
     if limit < 1 or limit > MAX_LIMIT or offset < 0:
         raise HTTPException(status_code=422, detail="invalid paging")
-    rows = db.execute("SELECT * FROM notes WHERE user_id = ? AND title LIKE ? ORDER BY id LIMIT ? OFFSET ?",
-                      (user["id"], f"%{q}%", limit, offset)).fetchall()
-    return [view(r) for r in rows]
+    rows = db.execute("SELECT * FROM notes WHERE user_id = ? AND title LIKE ? ORDER BY id", (user["id"], f"%{q}%")).fetchall()  # mut:sql mut:ownerfilter
+    return [view(r) for r in rows[offset:offset + limit]]
 
 
 def update(user: dict, note_id: int, title: str, body: str) -> dict:
