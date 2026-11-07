@@ -70,6 +70,8 @@ def test_every_family_keeps_a_sealed_test_even_when_tiny():
     b = split_bank([mk(1), mk(2), mk(3, family="security")], "h", 1)
     assert {t.family for t in b.sealed} == {"functional", "security"}
     assert split_bank([mk(1)], "h", 1).sealed[0].id == "T1"
+    singles = split_bank([mk(1), mk(2, family="security")], "h", 1)  # all-singleton families
+    assert len(singles.examples) == 1 and len(singles.sealed) == 1
 
 
 def test_sealed_order_is_stable_but_not_id_order(bank):
