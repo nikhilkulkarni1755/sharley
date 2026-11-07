@@ -24,7 +24,7 @@ PROFILES: dict[str, Profile] = {
                       test_ext=".test.ts", boot_cmd="npm run build && npm start", health_path="/api/health",
                       test_cmds=["npx vitest run", "npx playwright test"], port=3000),
     "docker-api": Profile(name="docker-api", test_frameworks=["pytest"], test_dir="tests",
-                          test_ext=".py", boot_cmd="docker build -t app . && docker run -p 8000:8000 app",
+                          test_ext=".py", boot_cmd="uvicorn app.main:app --host 0.0.0.0 --port 8000",
                           health_path="/health", test_cmds=["pytest -q tests"], port=8000),
 }
 
