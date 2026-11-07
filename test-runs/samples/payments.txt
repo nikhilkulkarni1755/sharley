@@ -1,0 +1,42 @@
+---CMD LINE OUTPUT---
++ python sample_run.py payments   (spec from SPEC.md -> tests -> run on flawed AND fixed twin in the Docker sandbox)
+spec: 34 requirements, coverage 100.0%, verifier family anthropic
+tests generated: 90 (families: {'functional': 62, 'security': 27, 'env': 1})
+flawed app boot_ok=True; failing tests on FLAWED: 10/90
+fixed  app boot_ok=True; failing tests on FIXED : 4/90  <- false failures
+
+DIFFERENTIAL FAILURES (fail on flawed, pass on fixed):
+  T51 [functional] R22: Only the person who was paid can initiate a refund of that payment
+      -> assert: tests/test_functional_51.py::test_payee_can_refund - AssertionError: assert False is True
+  T55 [functional] R24: System must allow a payment to be refunded only once
+      -> assert: tests/test_functional_55.py::test_double_refund_rejected - AssertionError: expected 409 on second refund, got 402 {"detail":"insufficient funds to refund"}
+  T57 [functional] R25: System must never allow a refund for more than the original payment value
+      -> assert: tests/test_functional_57.py::test_second_refund_rejected_and_no_extra_money - AssertionError: {"id":22,"refunded":true}
+  T58 [functional] R25: System must never allow a refund for more than the original payment value
+      -> assert: tests/test_functional_58.py::test_concurrent_refunds_only_one_succeeds - AssertionError: [200, 200, 200, 200, 200, 200, ...]
+  T62 [functional] R25: System must never allow a refund for more than the original payment value
+      -> assert: tests/test_functional_62.py::test_replayed_payment_then_refund_returns_only_one_payment_amount - AssertionError: assert 200 == 409
+  T72 [security] R28: System must reject unsigned or tampered tokens
+      -> assert: tests/test_security_72.py::test_unsigned_token_rejected - AssertionError: unsigned token 'eyJhbGciOiAibm9uZSIsICJ0eXAiOiAiSldUIn0.' accepted: 200 {"id":126,"bal
+
+FALSE FAILURES on the fixed twin:
+  T69 ['R27', 'R28'] runtime: tests/test_security_69.py::test_garbage_and_empty_tokens_rejected[Bearer ] - httpx.LocalProtocolError: Illegal header value b'Bearer '
+  T7 ['R3'] assert: tests/test_functional_7.py::test_token_response_carries_token_and_subject - AssertionError: subject missing, got ['token']
+  T82 ['R29'] runtime: tests/test_security_82.py::test_not_found_and_unauthorized_errors_do_not_leak - httpx.LocalProtocolError: Illegal header value b'Bearer \x00garbage'
+  T89 ['R34'] assert: tests/test_security_89.py::test_non_integer_ids_in_path_rejected_cleanly - AssertionError: GET /accounts/99999999999999999999999 gave 500
+
+PLANTED FLAWS:
+  FLAW-CVE: DETECTED by T72
+  FLAW-LOGIC: DETECTED by T51, T55, T57, T58, T62
+exit=0
+
++ python -m sharley spend
+spent $14.3239 of $18.00 cap over 95 calls
+  meta: $10.4563 (32069 in / 202713 out tokens)
+  anthropic: $3.8676 (102151 in / 366325 out tokens)
+
+---SUMMARY---
+Payments API (planted: FLAW-LOGIC double refund, FLAW-CVE alg=none token). Tests written from SPEC.md plus the app's route/body/error surface.
+Run after fixes: 90 tests; flawed app fails 10, fixed twin fails 4 (4.4% false failures, dropped by calibration -> 86, then 85 after sealing detectors).
+FLAW-LOGIC DETECTED by 5 tests (T51, T55, T57, T58, T62). FLAW-CVE DETECTED by 1 test (T72). Earlier iterations: 63/81 false failures (tests guessed request bodies) -> fixed by passing request-body fields; CVE flaw was missed once by generation variance.
+Live playground check (real server, sealed bank, same API the web UI uses): flawed code -> 'Wrong Answer on sealed test 2 of 60' in 2.2s; fixed code -> 'Accepted' 60/60 in 2.2s.

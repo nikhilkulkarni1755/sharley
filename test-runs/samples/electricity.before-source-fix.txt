@@ -1,0 +1,69 @@
+---CMD LINE OUTPUT---
++ python sample_run.py electricity   (spec from SPEC.md -> tests -> run on flawed AND fixed twin in the Docker sandbox)
+spec: 28 requirements, coverage 100.0%, verifier family anthropic
+tests generated: 68 (families: {'functional': 41, 'security': 26, 'env': 1})
+flawed app boot_ok=True; failing tests on FLAWED: 50/68
+fixed  app boot_ok=True; failing tests on FIXED : 50/68  <- false failures
+
+DIFFERENTIAL FAILURES (fail on flawed, pass on fixed):
+
+FALSE FAILURES on the fixed twin:
+  T1 ['R1'] assert: tests/test_functional_1.py::test_kwh_used_is_difference_between_two_readings - assert 401 == 200
+  T10 ['R5', 'R6'] assert: tests/test_functional_10.py::test_every_house_with_usage_has_nonzero_bill_or_error - assert 401 == 200
+  T11 ['R6'] assert: tests/test_functional_11.py::test_unknown_house_bill_returns_error_not_zero - assert 401 in (404, 400, 422)
+  T12 ['R7'] assert: tests/test_functional_12.py::test_reading_lower_than_previous_is_rejected - assert 401 == 200
+  T13 ['R7'] assert: tests/test_functional_13.py::test_reading_higher_than_previous_is_accepted - assert 401 == 200
+  T14 ['R7'] assert: tests/test_functional_14.py::test_lower_reading_for_house_a_not_compared_with_house_b - assert 401 == 200
+  T15 ['R8'] assert: tests/test_functional_15.py::test_second_reading_same_house_same_month_rejected - assert 401 == 200
+  T16 ['R8'] assert: tests/test_functional_16.py::test_same_month_different_houses_both_accepted - assert 401 == 200
+  T17 ['R9'] assert: tests/test_functional_17.py::test_valid_yyyy_mm_month_accepted - assert 401 == 200
+  T18 ['R9'] assert: tests/test_functional_18.py::test_invalid_month_formats_rejected_with_422 - assert 401 == 200
+  T19 ['R10'] assert: tests/test_functional_19.py::test_list_houses_returns_collection - assert 401 == 200
+  T2 ['R2'] assert: tests/test_functional_2.py::test_residential_a_billed_at_12_cents_per_kwh - assert 401 == 200
+  T20 ['R10'] assert: tests/test_functional_20.py::test_get_house_detail_has_expected_fields - assert 401 == 200
+  T21 ['R11'] runtime: tests/test_functional_21.py::test_add_reading_happy_path - IndexError: list index out of range
+  T22 ['R11'] runtime: tests/test_functional_22.py::test_add_reading_duplicate_month_conflict - IndexError: list index out of range
+  T23 ['R11'] runtime: tests/test_functional_23.py::test_add_reading_invalid_month_format - IndexError: list index out of range
+  T24 ['R11'] runtime: tests/test_functional_24.py::test_add_reading_cannot_go_backwards - IndexError: list index out of range
+  T25 ['R11'] runtime: tests/test_functional_25.py::test_add_reading_missing_fields_rejected - IndexError: list index out of range
+  T26 ['R12'] assert: tests/test_functional_26.py::test_run_billing_returns_result - AssertionError: {"detail":"authentication required"}
+  T27 ['R12'] assert: tests/test_functional_27.py::test_billing_summary_after_run - AssertionError: {"detail":"authentication required"}
+  T28 ['R13'] assert: tests/test_functional_28.py::test_billing_summary_includes_total_cents - AssertionError: summary status 401
+  T29 ['R13'] assert: tests/test_functional_29.py::test_billing_summary_total_is_non_negative_integer - assert 401 == 200
+  T3 ['R3'] assert: tests/test_functional_3.py::test_residential_b_billed_at_18_cents_per_kwh - assert 401 == 200
+  T30 ['R14'] assert: tests/test_functional_30.py::test_billing_summary_includes_unbilled_consumers_list - assert 401 == 200
+  T31 ['R14'] assert: tests/test_functional_31.py::test_billing_summary_unbilled_entries_shape - assert 401 == 200
+  T32 ['R17'] assert: tests/test_functional_32.py::test_reading_bad_month_format_is_client_error - AssertionError: expected 422 for bad month got 401
+  T38 ['R20'] assert: tests/test_functional_38.py::test_houses_list_not_empty_for_preload - AssertionError: GET /houses failed: 401 {"detail":"authentication required"}
+  T39 ['R20'] assert: tests/test_functional_39.py::test_preload_jan_reading_exists_for_every_house - AssertionError: GET /houses failed: 401 {"detail":"authentication required"}
+  T4 ['R1'] assert: tests/test_functional_4.py::test_reading_lower_than_previous_is_rejected - assert 401 == 200
+  T40 ['R20'] assert: tests/test_functional_40.py::test_preload_feb_reading_exists_for_every_house - AssertionError: GET /houses failed: 401 {"detail":"authentication required"}
+  T41 ['R20'] assert: tests/test_functional_41.py::test_preload_readings_persist_on_retry - AssertionError: GET /houses failed: 401 {"detail":"authentication required"}
+  T45 ['R21'] runtime: test was not collected or run
+  T46 ['R21'] runtime: test was not collected or run
+  T47 ['R15'] runtime: test was not collected or run
+  T48 ['R15', 'R21'] runtime: test was not collected or run
+  T5 ['R1'] assert: tests/test_functional_5.py::test_duplicate_month_reading_conflicts - assert 401 == 200
+  T51 ['R24', 'R22'] runtime: tests/test_security_51.py::test_invalid_keys_rejected[] - httpx.LocalProtocolError: Illegal header value b'Bearer '
+  T53 ['R22'] assert: tests/test_security_53.py::test_valid_own_house_key_authenticates - AssertionError: key-<house-id> was not accepted for its own house under any header style
+  T57 ['R26'] runtime: test was not collected or run
+  T58 ['R26'] runtime: test was not collected or run
+  T59 ['R26'] runtime: test was not collected or run
+  T6 ['R1'] assert: tests/test_functional_6.py::test_invalid_month_format_rejected[2024-13] - assert 401 == 200
+  T60 ['R26'] runtime: test was not collected or run
+  T61 ['R27'] runtime: test was not collected or run
+  T62 ['R27'] runtime: test was not collected or run
+  T65 ['R28'] runtime: test was not collected or run
+  T66 ['R28'] runtime: test was not collected or run
+  T67 ['R28', 'R26'] runtime: test was not collected or run
+  T7 ['R1', 'R2', 'R3'] assert: tests/test_functional_7.py::test_equal_consecutive_readings_bill_zero - assert 401 == 200
+  T8 ['R4'] assert: tests/test_functional_8.py::test_commercial_a_billed_25_cents_per_kwh - assert 401 == 200
+
+PLANTED FLAWS:
+  FLAW-FREE-POWER: MISSED
+exit=0
+
++ python -m sharley spend
+spent $17.1017 of $19.50 cap over 117 calls
+  meta: $12.4680 (37270 in / 241905 out tokens)
+  anthropic: $4.6338 (120730 in / 439232 out tokens)

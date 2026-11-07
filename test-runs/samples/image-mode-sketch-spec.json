@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "stack": null,
+  "source_hash": "92803d6a522dd2a7cd33abd283a6eb9a586803b99793f41e8b9ad79946704a9f",
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "The system shall feed each monthly meter reading into the billing run as charge input.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: Meter reading (monthly) -> Billing run (operator)",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R2",
+      "text": "The system shall calculate charges in the billing run using the Tariff table RES-A/B COM-A.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: Tariff table RES-A/B COM-A -> Billing run (operator)",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R3",
+      "text": "The system shall generate a Customer bill as the output of each billing run.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: Billing run (operator) -> Customer bill",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R4",
+      "text": "The system shall record meter readings on a monthly interval.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: Meter reading (monthly)",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R5",
+      "text": "The system shall require each billing run to be executed by an operator.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: Billing run (operator)",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R6",
+      "text": "The system shall store tariff rates for RES-A, RES-B, and COM-A.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: Tariff table RES-A/B COM-A",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R7",
+      "text": "The system shall persist each generated Customer bill.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: Customer bill",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R8",
+      "text": "Only authenticated users assigned the operator role shall be permitted to execute a billing run.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A1"
+      }
+    },
+    {
+      "id": "R9",
+      "text": "The system shall restrict access to a Customer bill to the owning customer and authorized operators.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A2"
+      }
+    },
+    {
+      "id": "R10",
+      "text": "The system shall validate monthly meter reading input and reject missing, non-numeric, or negative values before use in a billing run.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A3"
+      }
+    }
+  ],
+  "assumptions": {
+    "A1": "Billing run is labeled (operator), implying a privileged operation; authentication and role check are inferred to prevent unauthorized bill generation.",
+    "A2": "Customer bills contain private usage and billing data; ownership enforcement is inferred to prevent cross-customer disclosure even though not explicitly stated.",
+    "A3": "Billing correctness depends on meter reading values; input validation is inferred to prevent incorrect charges from malformed or out-of-range readings."
+  },
+  "ignored": [],
+  "coverage_pct": 100.0,
+  "source_excerpt": "Entity: Meter reading (monthly)\nEntity: Billing run (operator)\nEntity: Customer bill\nEntity: Tariff table RES-A/B COM-A\nFlow: Meter reading (monthly) to Billing run (operator) to Customer bill\nArrow: Meter reading (monthly) -> Billing run (operator)\nArrow: Tariff table RES-A/B COM-A -> Billing run (operator)\nArrow: Billing run (operator) -> Customer bill",
+  "spec_hash": "476e09447269a040994b6d5f970e2312b97ae12c57ddb3b4bae363e90bb16f45"
+}
