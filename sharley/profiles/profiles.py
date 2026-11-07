@@ -32,18 +32,19 @@ _PY_WEB = re.compile(r"(?<![\w-])(fastapi|flask|django|starlette|aiohttp)(?![\w-
 
 
 def detect_stack(files: dict[str, str]) -> StackName | None:
-    """Plain-code stack detection from {path: content}."""
-    pkg = files.get("package.json")
-    if pkg:
+    """Plain-code stack detection from {path: content}; markers may live in subfolders (monorepos)."""
+    def named(name: str):
+        return [(p, t) for p, t in files.items() if p.split("/")[-1] == name]
+
+    for _, pkg in named("package.json"):
         try:
             data = json.loads(pkg)
         except ValueError:
-            data = {}
-        deps = {**data.get("dependencies", {}), **data.get("devDependencies", {})}
-        if "next" in deps:
+            continue
+        if "next" in {**data.get("dependencies", {}), **data.get("devDependencies", {})}:
             return "nextjs"
-    py_deps = "\n".join(files.get(f, "") for f in ("requirements.txt", "pyproject.toml"))
-    if "Dockerfile" in files and _PY_WEB.search(py_deps):
+    py_deps = "\n".join(t for n in ("requirements.txt", "pyproject.toml") for _, t in named(n))
+    if named("Dockerfile") and _PY_WEB.search(py_deps):
         return "docker-api"
     return None
 
