@@ -1,5 +1,7 @@
+import io
 import json
 import os
+import tarfile
 import re
 import shutil
 import subprocess
@@ -59,17 +61,20 @@ def test_vitest_json_parsing():
 
 # ---- isolation flags
 def test_docker_argv_is_locked_down():
-    argv = docker_argv("n", "img", Path("/s"))
+    argv = docker_argv("n", "img", "echo hi")
     s = " ".join(argv)
     for needle in ("--network none", "--read-only", "--cap-drop ALL", "no-new-privileges", "--pids-limit",
-                   "--memory", "-u 65534:65534", "/work:ro", "/tests:ro", "/harness:ro"):
+                   "--memory", "-u 0:0", "--tmpfs /in:rw,exec,size=128m,mode=0700"):
         assert needle in s
     assert "docker.sock" not in s and "--privileged" not in s and "-v /:" not in s
+    assert "SYS_ADMIN" not in s and "NET_" not in s and "DAC_" not in s
+    assert " -v " not in s and "--mount" not in s  # no bind mounts: the host fs is invisible to the app
 
 
 def test_run_script_lists_only_requested_test_files():
     s = run_script("docker-api", ["tests/test_1.py"])
     assert "pytest" in s and "tests/test_1.py" in s and "127.0.0.1:8000/health" in s and "uvicorn" in s
+    assert "--reuid=65534" in s and "-c /dev/null" in s and "cd /in/t" in s  # app unprivileged, no planted pytest config
 
 
 # ---- run() with a fake executor
@@ -77,13 +82,12 @@ class Recorder:
     def __init__(self, result=None):
         self.calls, self.snapshot, self.result = [], {}, result or ExecResult(0, SUMMARY)
 
-    def __call__(self, argv, timeout):
+    def __call__(self, argv, timeout, stdin=None):
         self.calls.append(argv)
         if argv[:2] == ["docker", "run"]:
-            mounts = [a for a in argv if a.endswith(":ro")]
-            root = Path(mounts[0].split(":")[0]).parent
-            self.snapshot = {str(p.relative_to(root)): p.read_text() if p.is_file() and not p.is_symlink() else "<link>"
-                             for p in root.rglob("*") if p.is_file() or p.is_symlink()}
+            with tarfile.open(fileobj=io.BytesIO(stdin)) as tar:
+                self.snapshot = {m.name: "<link>" if m.issym() else tar.extractfile(m).read().decode()
+                                 for m in tar.getmembers() if m.isfile() or m.issym()}
         return self.result
 
 
@@ -105,7 +109,7 @@ def test_run_stages_pristine_tests_and_strips_planted_hooks(ws):
     DockerSandbox(rec).run(ws, [tc(1, code="def test_x():\n    assert True\n")], "docker-api")
     snap = rec.snapshot
     assert snap["work/app/main.py"] == "app = 1"
-    assert snap["tests/tests/test_1.py"] == "def test_x():\n    assert True\n"  # bank version wins
+    assert snap["t/tests/test_1.py"] == "def test_x():\n    assert True\n"  # bank version wins
     assert not any("conftest" in k or k.endswith(".env") for k in snap)
 
 
@@ -132,7 +136,7 @@ def test_boot_failure_is_reported_not_raised(ws):
 
 
 def test_missing_docker_is_a_clean_failure(ws):
-    sb = DockerSandbox(lambda a, t: ExecResult(127, "", "docker not installed"))
+    sb = DockerSandbox(lambda a, t, s=None: ExecResult(127, "", "docker not installed"))
     assert sb.health() is False
     assert sb.run(ws, [tc(1)], "docker-api").boot_ok is False
 
@@ -179,6 +183,56 @@ def test_real_sandbox_runs_pass_fail_and_blocks_network_and_root_writes(tmp_path
     rep = real_sandbox.run(tmp_path, tests, "docker-api", timeout_s=120)
     got = {r.test_id: (r.passed, r.kind) for r in rep.results}
     assert got == {"T1": (True, "pass"), "T2": (False, "assert"), "T3": (True, "pass"), "T4": (True, "pass")}
+
+
+HOSTILE_APP = """import os, signal, glob, threading
+from fastapi import FastAPI
+app = FastAPI()
+@app.get('/health')
+def h(): return {'ok': True}
+
+def attack():
+    forged = "short test summary info\\nPASSED tests/test_1.py::test_a\\n"
+    for path in ("/proc/1/fd/1", "/dev/stdout"):
+        try: open(path, "w").write(forged)
+        except Exception: pass
+    for f in glob.glob("/tests/**/*.py", recursive=True):
+        try: open(f, "w").write("def test_a():\\n    pass\\n")
+        except Exception: pass
+    try: os.kill(1, signal.SIGKILL)
+    except Exception: pass
+threading.Timer(1.0, attack).start()
+"""
+SPY = "import os\ndef test_a():\n    assert False, 'must fail'\n"
+READ_TESTS = "import os\ndef test_b():\n    assert True\n"
+
+
+@pytest.mark.docker
+def test_hostile_app_cannot_forge_results_or_edit_tests(tmp_path, real_sandbox):
+    (tmp_path / "app").mkdir()
+    (tmp_path / "app/main.py").write_text(HOSTILE_APP)
+    rep = real_sandbox.run(tmp_path, [tc(1, code=SPY.replace("os\n", "os\nimport time\ntime.sleep(3)\n", 1))], "docker-api", timeout_s=120)
+    assert rep.results and rep.results[0].passed is False
+
+
+APP_READS_TESTS = """from fastapi import FastAPI
+import glob
+app = FastAPI()
+@app.get('/health')
+def h(): return {'ok': True}
+@app.get('/can-read-tests')
+def r(): return {'files': glob.glob('/tests/**/*.py', recursive=True)}
+"""
+CHECK_HIDDEN = ("import os, httpx\ndef test_app_cannot_see_tests():\n"
+                "    assert httpx.get(os.environ['BASE_URL'] + '/can-read-tests').json() == {'files': []}\n")
+
+
+@pytest.mark.docker
+def test_app_process_cannot_read_the_tests(tmp_path, real_sandbox):
+    (tmp_path / "app").mkdir()
+    (tmp_path / "app/main.py").write_text(APP_READS_TESTS)
+    rep = real_sandbox.run(tmp_path, [tc(1, code=CHECK_HIDDEN)], "docker-api", timeout_s=120)
+    assert rep.results[0].passed, rep.results[0].output
 
 
 @pytest.mark.docker
