@@ -147,3 +147,11 @@ def test_greenfield_has_empty_surface():
     c, p = chain(reply(draft()))
     write_tests(c, "functional", "docker-api", [R1])
     assert '"surface":""' in p.calls[0][1]
+
+
+def test_env_example_assertion_only_when_the_project_has_one():
+    with_ex, = env_tests({"a.py": 'import os\nos.getenv("A_KEY")', ".env.example": "A_KEY=\n"}, "docker-api", ["R1"])
+    without, = env_tests({"a.py": 'import os\nos.getenv("A_KEY")'}, "docker-api", ["R1"])
+    ast.parse(with_ex.code), ast.parse(without.code)
+    assert "declares_every_referenced_variable" in with_ex.code and "declares_every_referenced_variable" not in without.code
+    assert "test_app_boots_and_health_returns_200" in without.code

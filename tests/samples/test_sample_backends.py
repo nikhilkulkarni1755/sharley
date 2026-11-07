@@ -187,3 +187,22 @@ def test_the_flawed_source_is_unchanged_by_building_the_twin(tmp_path):
     fixed_copy("payments", tmp_path / "f")
     assert (backend_dir("payments") / "app/auth.py").read_text() == before
     assert "alg != \"none\"" not in (tmp_path / "f/app/auth.py").read_text()
+
+
+# ---------------- playground serving
+def test_playground_files_hide_the_planted_flaw_comments_but_keep_the_code(tmp_path):
+    from evals.sample_backends import playground_files
+    files = playground_files("payments")
+    blob = "\n".join(files.values())
+    assert set(files) == {"app/auth.py", "app/db.py", "app/main.py"}
+    assert "FLAW" not in blob and "CVE-2015" not in blob and "and False" in blob  # the bug is still there to be found
+
+
+def test_index_roundtrip_and_missing_file(tmp_path):
+    from evals.sample_backends import load_index, register
+    assert load_index(tmp_path) == {}
+    register(tmp_path, "payments", "h:0")
+    register(tmp_path, "electricity", "g:0")
+    assert load_index(tmp_path) == {"payments": "h:0", "electricity": "g:0"}
+    (tmp_path / "samples.json").write_text("{bad")
+    assert load_index(tmp_path) == {}

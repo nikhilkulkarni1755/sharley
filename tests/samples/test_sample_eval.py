@@ -1,0 +1,45 @@
+from evals.sample_eval import classify, failed
+from sharley.runner.base import RunReport, TestResult
+from sharley.schemas import Evidence, Requirement, Spec, TestCase
+
+EV = Evidence(kind="observed", source_span="x")
+SPEC = Spec(source_hash="s", requirements=[
+    Requirement(id="R1", text="A payment can be refunded only once", category="security", evidence=EV),
+    Requirement(id="R2", text="Unsigned or tampered tokens must be rejected", category="security", evidence=EV),
+    Requirement(id="R3", text="GET /health returns 200", category="deployment", evidence=EV)])
+
+
+def t(i, req):
+    return TestCase(id=f"T{i}", requirement_ids=[req], name="n", family="functional", file=f"tests/t{i}.py", code="x")
+
+
+def rep(*failing, n=3, boot=True):
+    return RunReport(boot_ok=boot, results=[TestResult(test_id=f"T{i}", passed=f"T{i}" not in failing,
+                                                      kind="pass" if f"T{i}" not in failing else "assert") for i in range(1, n + 1)])
+
+
+TESTS = [t(1, "R1"), t(2, "R2"), t(3, "R3")]
+
+
+def test_detection_is_the_difference_between_flawed_and_fixed():
+    r = classify(SPEC, TESTS, rep("T1", "T2"), rep(), ["FLAW-LOGIC", "FLAW-CVE"])
+    assert r.detected == {"FLAW-LOGIC": ["T1"], "FLAW-CVE": ["T2"]} and r.false_failures == [] and r.differential == ["T1", "T2"]
+
+
+def test_a_test_failing_on_both_is_a_false_failure_not_a_detection():
+    r = classify(SPEC, TESTS, rep("T1", "T3"), rep("T3"), ["FLAW-LOGIC"])
+    assert r.detected == {"FLAW-LOGIC": ["T1"]} and r.false_failures == ["T3"] and r.differential == ["T1"]
+
+
+def test_missed_flaw_is_reported_as_absent():
+    assert classify(SPEC, TESTS, rep(), rep(), ["FLAW-LOGIC", "FLAW-CVE"]).detected == {}
+
+
+def test_unrelated_differential_failures_do_not_count_as_detections():
+    assert classify(SPEC, TESTS, rep("T3"), rep(), ["FLAW-LOGIC"]).detected == {}
+
+
+def test_boot_failure_is_never_mistaken_for_a_clean_run():
+    assert failed(RunReport(boot_ok=False)) == {"__boot__"}
+    r = classify(SPEC, TESTS, rep(), RunReport(boot_ok=False), ["FLAW-LOGIC"])
+    assert r.false_failures == ["__boot__"]

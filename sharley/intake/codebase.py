@@ -30,11 +30,81 @@ MAX_ITEMS = 150  # keeps a 15k-LOC repo summary to a few KB
 _DOCKER = re.compile(r"^\s*(FROM|EXPOSE|ENV|ARG|CMD|ENTRYPOINT)\s+(.+)$", re.M)
 
 
+_HANDLER = re.compile(r"@\w+\.(get|post|put|patch|delete)\(\s*['\"]([^'\"]*)['\"][^\n]*\n(?:[ \t]*@[^\n]*\n)*[ \t]*(?:async\s+)?def\s+\w+\(([^)]*)\)")
+_MODEL = re.compile(r"^class\s+(\w+)\([^)]*(?:BaseModel|SQLModel)[^)]*\):\n((?:[ \t]+[^\n]*\n|\n)+)", re.M)
+_ATTR = re.compile(r"^[ \t]{4}(\w+)\s*:\s*([^=\n#]+?)(?:\s*=\s*([^\n#]+))?\s*(?:#.*)?$", re.M)
+_PLAIN = {"int", "str", "float", "bool", "dict", "list", "Request", "Response", "Header", "Query", "Depends", "Path", "Body"}
+
+
+def _default(d: str) -> str:
+    """A pydantic Field(...) without default= is REQUIRED; say so instead of printing the constraints as a default."""
+    d = d.strip()
+    if not d:
+        return " (required)"
+    return " (required)" if d.startswith("Field(") and "default" not in d else f" = {d}"
+
+
+def response_keys(files: dict[str, str]) -> list[str]:
+    """['POST /auth/token: token', ...] from the first `return {...}` dict literal of each route handler."""
+    out = []
+    for path, text in files.items():
+        if not path.endswith(".py") or TEST_PATH.search(path):
+            continue
+        hits = list(_HANDLER.finditer(text))
+        for i, m in enumerate(hits):
+            body = text[m.end(): hits[i + 1].start() if i + 1 < len(hits) else len(text)]
+            ret = re.search(r"return\s+\{([^}]*)\}", body)
+            keys = re.findall(r"['\"]([A-Za-z_]\w*)['\"]\s*:", ret.group(1)) if ret else []
+            if keys:
+                out.append(f"{m.group(1).upper()} {m.group(2) or '/'}: {', '.join(dict.fromkeys(keys))}")
+    return sorted(set(out))
+
+
+def error_hints(files: dict[str, str]) -> list[str]:
+    """['POST /auth/signup: 403 agents are created by their owner', ...] from HTTPException(status_code=N, detail="...")."""
+    out = []
+    for path, text in files.items():
+        if not path.endswith(".py") or TEST_PATH.search(path):
+            continue
+        hits = list(_HANDLER.finditer(text))
+        for i, m in enumerate(hits):
+            body = text[m.end(): hits[i + 1].start() if i + 1 < len(hits) else len(text)]
+            for code, msg in re.findall(r"status_code=(\d{3}),\s*detail=['\"]([^'\"]+)['\"]", body):
+                out.append(f"{m.group(1).upper()} {m.group(2) or '/'}: {code} {msg}")
+    return sorted(set(out))
+
+
+def model_fields(files: dict[str, str]) -> dict[str, str]:
+    """{Model: 'field: type [= default], ...'} for pydantic/SQLModel request models (required fields are what tests must send)."""
+    out = {}
+    for path, text in files.items():
+        if path.endswith(".py") and not TEST_PATH.search(path):
+            for name, body in _MODEL.findall(text):
+                out[name] = ", ".join(f"{a}: {t.strip()}{_default(d)}" for a, t, d in _ATTR.findall(body))
+    return out
+
+
+def request_bodies(files: dict[str, str]) -> list[str]:
+    """['POST /principals: NewPrincipal', ...] from handler signatures that take a model-typed parameter."""
+    models, out = model_fields(files), []
+    for path, text in files.items():
+        if path.endswith(".py") and not TEST_PATH.search(path):
+            for verb, route, params in _HANDLER.findall(text):
+                for ann in re.findall(r":\s*([A-Z]\w*)\b", params):
+                    if ann in models and ann not in _PLAIN:
+                        out.append(f"{verb.upper()} {route or '/'}: {ann}")
+    return sorted(set(out))
+
+
 class CodebaseSummary(Strict):
     stack: StackName | None
     routes: list[str] = Field(default_factory=list)
     functions: list[str] = Field(default_factory=list)
     schemas: list[str] = Field(default_factory=list)
+    request_bodies: list[str] = Field(default_factory=list)
+    response_keys: list[str] = Field(default_factory=list)
+    error_hints: list[str] = Field(default_factory=list)
+    models: dict[str, str] = Field(default_factory=dict)
     env_vars: list[str] = Field(default_factory=list)
     dockerfile: list[str] = Field(default_factory=list)
 
@@ -119,7 +189,8 @@ def summarize_codebase(files: dict[str, str]) -> CodebaseSummary:
         if path.split("/")[-1].startswith("Dockerfile"):
             docker += [f"{k} {v.strip()}" for k, v in _DOCKER.findall(text)]
     return CodebaseSummary(stack=detect_stack(files), routes=sorted(routes), functions=sorted(funcs),
-                           schemas=sorted(schemas), env_vars=sorted(env_refs(files)), dockerfile=docker)
+                           schemas=sorted(schemas), request_bodies=request_bodies(files), response_keys=response_keys(files), error_hints=error_hints(files), models=model_fields(files),
+                           env_vars=sorted(env_refs(files)), dockerfile=docker)
 
 
 def render_summary(s: CodebaseSummary) -> str:
@@ -131,4 +202,17 @@ def render_summary(s: CodebaseSummary) -> str:
             lines += [f"- {i}" for i in items[:MAX_ITEMS]]
             if len(items) > MAX_ITEMS:
                 lines.append(f"- ... and {len(items) - MAX_ITEMS} more")
+    if s.request_bodies:
+        lines.append("Request bodies (send exactly these field names):")
+        lines += [f"- {b}" for b in s.request_bodies]
+    if s.response_keys:
+        lines.append("Response JSON keys:")
+        lines += [f"- {r}" for r in s.response_keys][:MAX_ITEMS]
+    if s.error_hints:
+        lines.append("Documented error responses (route: status message):")
+        lines += [f"- {e}" for e in s.error_hints][:MAX_ITEMS]
+    used = {b.split(": ")[-1] for b in s.request_bodies}
+    if s.models:
+        lines.append("Model fields:")
+        lines += [f"- {n}({f})" for n, f in sorted(s.models.items()) if n in used or not used][:MAX_ITEMS]
     return "\n".join(lines)

@@ -34,3 +34,4 @@ copied from other projects.
 | Spend cap + ledger | `sharley/harness/budget.py` | #28 |
 | Codebase surface fixes | `sharley/intake/codebase.py` | #29 |
 | Sample backends (payments, electricity) | `sample-backends/` | #33 |
+| Playground backend + guard | `sharley/api/` | #34 |

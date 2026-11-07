@@ -190,3 +190,107 @@ def test_image_intake_rejects_bad_payloads(client, payload):
     body = {"image_b64": payload}
     assert client.post("/api/specs/image", json=body).status_code == 422
     assert client.post("/api/specs/image", json={"image_b64": base64.b64encode(b"<svg onload=1>").decode()}).status_code == 422
+
+
+def test_samples_endpoint_serves_spec_and_clean_source_but_no_sealed_content(tmp_path):
+    from evals.sample_backends import register
+    from sharley.judge import save_bank, split_bank
+    from tests.gate.test_gate import FakeSandbox as FS
+    ctx = Context(env={"SHARLEY_HOME": str(tmp_path)}, repo=JsonRepository(tmp_path / "db"), verifier=FallbackChain([EchoWriter(EXTRACT)]),
+                  long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FS())
+    c = TestClient(create_app(ctx))
+    before = c.get("/api/samples").json()
+    assert [s["name"] for s in before] == ["payments", "electricity"] and all(s["bank"] is None for s in before)
+    spec = c.post("/api/specs", json={"text": "Users create notes and never read other notes."}).json()
+    bank = c.post("/api/banks", json={"spec_hash": spec["spec_hash"]}).json()
+    register(tmp_path, "payments", bank["key"])
+    after = {s["name"]: s for s in c.get("/api/samples").json()}
+    assert after["payments"]["bank"]["key"] == bank["key"] and after["electricity"]["bank"] is None
+    blob = json.dumps(after)
+    assert "FLAW" not in blob and "flaws.json" not in blob and "FLAWS.md" not in blob
+    assert all(t["locked"] for t in after["payments"]["bank"]["sealed"])
+
+
+# ---- public-mode guard
+def public_client(tmp_path, **guard_kw):
+    from sharley.api.guard import Guard
+    ctx = Context(env={}, repo=JsonRepository(tmp_path / "db"), verifier=FallbackChain([EchoWriter(EXTRACT)]),
+                  long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FakeSandbox())
+    return TestClient(create_app(ctx, guard=Guard(public=True, admin_key="s3cret", **guard_kw))), ctx
+
+
+def test_paid_endpoints_need_the_admin_key_in_public_mode_but_free_ones_do_not(tmp_path):
+    c, _ = public_client(tmp_path)
+    for path, body in (("/api/specs", {"text": "x" * 20}), ("/api/banks", {"spec_hash": "h"}), ("/api/chat", {"session": "s", "text": "hello there friend"}),
+                       ("/api/specs/image", {"image_b64": "AAAA"})):
+        assert c.post(path, json=body).status_code == 403
+        assert c.post(path, json=body, headers={"x-sharley-key": "wrong"}).status_code == 403
+    assert c.get("/api/health").status_code == 200 and c.get("/api/samples").status_code == 200
+    assert c.post("/api/specs", json={"text": "Users create notes."}, headers={"x-sharley-key": "s3cret"}).status_code == 200
+
+
+def test_public_mode_without_a_configured_key_locks_paid_endpoints_completely(tmp_path):
+    from sharley.api.guard import Guard
+    ctx = Context(env={}, repo=JsonRepository(tmp_path), verifier=FallbackChain([ScriptedProvider("a")]),
+                  long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FakeSandbox())
+    c = TestClient(create_app(ctx, guard=Guard(public=True, admin_key="")))
+    assert c.post("/api/specs", json={"text": "hello world spec"}, headers={"x-sharley-key": ""}).status_code == 403
+
+
+def test_guard_reads_environment():
+    from sharley.api.guard import Guard
+    g = Guard.from_env({"SHARLEY_PUBLIC_MODE": "1", "SHARLEY_ADMIN_KEY": "k", "SHARLEY_RUNS_PER_MINUTE": "2", "SHARLEY_MAX_CONCURRENT_RUNS": "1"})
+    assert (g.public, g.admin_key, g.runs_per_minute, g.max_concurrent) == (True, "k", 2, 1)
+    assert Guard.from_env({}).public is False
+
+
+def _bank(c, ctx):
+    spec = TestClient(create_app(ctx)).post("/api/specs", json={"text": "Users create notes and never read other notes."}).json()
+    return TestClient(create_app(ctx)).post("/api/banks", json={"spec_hash": spec["spec_hash"]}).json()
+
+
+def run_body(bank):
+    return {"bank": bank["key"], "implementer_model": "m", "implementer_family": "google", "files": {"app/x.py": "x"}}
+
+
+def test_runs_are_rate_limited_per_ip_and_cap_resets_when_runs_finish(tmp_path):
+    c, ctx = public_client(tmp_path, runs_per_minute=2, max_concurrent=5)
+    bank = _bank(c, ctx)
+    ok = [c.post("/api/runs", json=run_body(bank), headers={"cf-connecting-ip": "1.2.3.4"}) for _ in range(3)]
+    assert [r.status_code for r in ok] == [202, 202, 429] and "wait a minute" in ok[2].json()["detail"]
+    assert c.post("/api/runs", json=run_body(bank), headers={"cf-connecting-ip": "5.6.7.8"}).status_code == 202  # other address unaffected
+
+
+def test_concurrency_cap_blocks_then_releases(tmp_path):
+    import time as _t
+    from sharley.api.guard import Guard
+    g = Guard(public=True, admin_key="k", runs_per_minute=100, max_concurrent=1)
+    ctx = Context(env={}, repo=JsonRepository(tmp_path / "db"), verifier=FallbackChain([EchoWriter(EXTRACT)]),
+                  long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FakeSandbox())
+    c = TestClient(create_app(ctx, guard=g))
+    bank = _bank(c, ctx)
+
+    class Req:
+        headers = {}
+        client = None
+    g.acquire_run(Req())  # one run "in flight"
+    busy = c.post("/api/runs", json=run_body(bank))
+    assert busy.status_code == 429 and "busy" in busy.json()["detail"]
+    g.release_run()
+    assert c.post("/api/runs", json=run_body(bank)).status_code == 202
+    for _ in range(100):  # the finished background run must release its own slot
+        if g._active == 0:
+            break
+        _t.sleep(0.05)
+    assert g._active == 0
+
+
+def test_finished_runs_delete_their_workspace(tmp_path):
+    import glob, tempfile, time as _t
+    before = set(glob.glob(tempfile.gettempdir() + "/sharley-sub-*"))
+    c, ctx = public_client(tmp_path)
+    bank = _bank(c, ctx)
+    run = c.post("/api/runs", json=run_body(bank)).json()
+    wait_events(c, run["run_id"])
+    _t.sleep(0.3)
+    assert set(glob.glob(tempfile.gettempdir() + "/sharley-sub-*")) == before

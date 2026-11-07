@@ -68,3 +68,47 @@ def test_sqlmodel_and_base_classes_are_schemas_and_react_components_are_not_func
 ])
 def test_monorepo_stack_detection(files, expected):
     assert detect_stack(files) == expected
+
+
+PAY = '''
+class NewUser(BaseModel):
+    name: str = Field(min_length=1)
+    limit: int | None = Field(default=None, gt=0)
+    note: str = "hi"
+
+
+@app.post("/users", status_code=201)
+def create(u: NewUser, who: dict = Depends(auth), request: Request = None):
+    return {"id": 1, "secret": "x"}
+
+
+@app.get("/users/{uid}")
+async def get(uid: int):
+    return {"name": "n"}
+'''
+
+
+def test_request_bodies_model_fields_and_response_keys_reach_the_surface():
+    from sharley.intake.codebase import render_summary
+    s = summarize_codebase({"app/main.py": PAY})
+    assert s.request_bodies == ["POST /users: NewUser"]
+    assert "name: str (required)" in s.models["NewUser"]
+    assert "limit: int | None = Field(default=None, gt=0)" in s.models["NewUser"] and 'note: str = "hi"' in s.models["NewUser"]
+    assert s.response_keys == ["GET /users/{uid}: name", "POST /users: id, secret"]
+    text = render_summary(s)
+    assert "send exactly these field names" in text and "NewUser(name: str (required)" in text and "POST /users: id, secret" in text
+
+
+def test_non_model_params_and_tests_are_not_request_bodies():
+    files = {"app/x.py": '@app.get("/a")\ndef a(q: str, d: Depends): return {"k": 1}', "tests/t.py": PAY}
+    assert summarize_codebase(files).request_bodies == []
+
+
+def test_error_hints_tell_the_writer_which_route_rejects_what():
+    code = ('@app.post("/auth/signup")\ndef signup(p):\n    if p.kind != "user":\n'
+            '        raise HTTPException(status_code=403, detail="agents are created by their owner")\n    return {"id": 1}\n'
+            '@app.post("/principals")\ndef make(p):\n    raise HTTPException(status_code=422, detail="agents need a limit")\n')
+    s = summarize_codebase({"app/main.py": code})
+    assert s.error_hints == ["POST /auth/signup: 403 agents are created by their owner", "POST /principals: 422 agents need a limit"]
+    from sharley.intake.codebase import render_summary
+    assert "POST /auth/signup: 403 agents are created by their owner" in render_summary(s)
