@@ -159,3 +159,34 @@ def test_demo_fixture_404_until_built(client, monkeypatch, tmp_path):
     (tmp_path / "demo.json").write_text('{"ok": true}')
     monkeypatch.setattr(mod, "DEMO_FIXTURE", tmp_path / "demo.json")
     assert client.get("/api/demo").json() == {"ok": True}
+
+
+# ---- image intake
+PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 20
+
+
+def test_image_intake_produces_a_spec(tmp_path):
+    import base64
+    desc = json.dumps({"entities": ["User", "Note"], "flows": ["login then list notes"]})
+    extract = json.dumps({"requirements": [{"text": "User can log in", "category": "functional",
+                                            "source_span": "Flow: login then list notes"}]})
+    replies = iter([desc, extract, '{"mappings": []}'])
+    from sharley.harness.provider import ModelProvider
+
+    class Seq(ModelProvider):
+        name, model, family = "seq", "seq", "fake"
+        health = lambda self: True  # noqa: E731
+        complete = lambda self, system, user, *, images=None: next(replies)  # noqa: E731
+
+    ctx = Context(env={}, repo=JsonRepository(tmp_path), verifier=FallbackChain([Seq()]),
+                  long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FakeSandbox())
+    r = TestClient(create_app(ctx)).post("/api/specs/image", json={"image_b64": base64.b64encode(PNG).decode()})
+    assert r.status_code == 200 and r.json()["requirements"][0]["evidence"]["kind"] == "observed"
+
+
+@pytest.mark.parametrize("payload", ["not base64!!", "R0lGODlhAQABAAAAACw=", ""])
+def test_image_intake_rejects_bad_payloads(client, payload):
+    import base64
+    body = {"image_b64": payload}
+    assert client.post("/api/specs/image", json=body).status_code == 422
+    assert client.post("/api/specs/image", json={"image_b64": base64.b64encode(b"<svg onload=1>").decode()}).status_code == 422
