@@ -10,6 +10,7 @@ from sharley.schemas import ModelRef, TestBank, Verdict
 from sharley.schemas.spec import StackName
 from sharley.storage.repository import Repository
 
+HINT_MAX = 320  # plain-English hints run ~250 chars; cut on a word boundary, never mid-word
 _CODEISH = re.compile(r"assert\b|def\s|import\s|==|=>|\(\)|`|\bresp(onse)?\.|\bclient\.", re.I)
 
 
@@ -22,7 +23,7 @@ def safe_hint(hint: str, requirement_ids: list[str]) -> str:
     h = " ".join(hint.split())
     if not h or _CODEISH.search(h):
         return f"behaviour required by {', '.join(requirement_ids)} is not met"
-    return h[:200]
+    return h if len(h) <= HINT_MAX else h[:HINT_MAX].rsplit(" ", 1)[0].rstrip(",;:") + "..."
 
 
 def judge(*, bank: TestBank, workspace: Path, sandbox: Sandbox, stack: StackName, implementer: ModelRef,

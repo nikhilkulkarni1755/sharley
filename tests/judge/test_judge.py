@@ -198,9 +198,14 @@ def test_code_shaped_hints_never_reach_the_implementer(hint):
     assert safe_hint(hint, ["R7"]) == "behaviour required by R7 is not met"
 
 
-def test_plain_hint_kept_and_capped():
+def test_plain_hint_kept_whole_up_to_the_cap_and_cut_on_a_word_boundary():
     assert safe_hint("users can read each other's notes", ["R7"]) == "users can read each other's notes"
-    assert len(safe_hint("word " * 100, ["R1"])) <= 200
+    real = ("Run billing for the seeded month 2026-02 and, for every residential A and B house, check its billed cents equals "
+            "its kWh used times 12 or 18 (within one cent of rounding). A mismatch shows the wrong rate was applied or the charge disagrees")
+    assert safe_hint(real, ["R1"]) == real  # ~255 chars: must not be truncated
+    long = "word " * 100
+    out = safe_hint(long, ["R1"])
+    assert out.endswith("...") and len(out) <= 323 and not out.removesuffix("...").endswith("wor")  # whole words only
 
 
 # ---- storage
