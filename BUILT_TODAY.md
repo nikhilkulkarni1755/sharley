@@ -35,3 +35,4 @@ copied from other projects.
 | Codebase surface fixes | `sharley/intake/codebase.py` | #29 |
 | Sample backends (payments, electricity) | `sample-backends/` | #33 |
 | Playground backend + guard | `sharley/api/` | #34 |
+| Bank calibration + spec background | `evals/sample_eval.py` | #36 |
