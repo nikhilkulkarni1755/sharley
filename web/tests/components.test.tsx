@@ -52,7 +52,7 @@ describe("Tabs", () => {
     fireEvent.keyDown(intake, { key: "ArrowRight" });
     expect(onChange).toHaveBeenLastCalledWith("judge");
     fireEvent.keyDown(intake, { key: "ArrowLeft" });
-    expect(onChange).toHaveBeenLastCalledWith("playground");
+    expect(onChange).toHaveBeenLastCalledWith("repo");
     fireEvent.keyDown(intake, { key: "End" });
     expect(onChange).toHaveBeenLastCalledWith("eval");
     fireEvent.keyDown(intake, { key: "Home" });

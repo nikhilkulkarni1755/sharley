@@ -38,7 +38,7 @@ test("submitting streams results, flips tiles and shows the verdict", async ({ p
   const banner = page.getByRole("region", { name: "Verdict" });
   await expect(banner).toContainText("Wrong Answer on sealed test 37 of 58");
   await expect(banner).toContainText("users can read each other's notes");
-  await expect(banner).toContainText("12/12 examples passed");
+  await expect(banner).toContainText("Visible examples: 12/12 passed");
   await expect(banner).toContainText("gpt-5 (openai)");
   await expect(banner).toContainText("claude-sonnet (anthropic)");
   await expect(banner).toContainText("different model families");
