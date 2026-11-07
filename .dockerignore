@@ -1,0 +1,10 @@
+.venv
+.git
+.env
+.env.*
+!.env.example
+.sharley
+node_modules
+web
+tests
+.claude
