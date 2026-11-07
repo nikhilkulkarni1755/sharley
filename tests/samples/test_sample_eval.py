@@ -43,3 +43,31 @@ def test_boot_failure_is_never_mistaken_for_a_clean_run():
     assert failed(RunReport(boot_ok=False)) == {"__boot__"}
     r = classify(SPEC, TESTS, rep(), RunReport(boot_ok=False), ["FLAW-LOGIC"])
     assert r.false_failures == ["__boot__"]
+
+
+def _bank():
+    from sharley.schemas import TestBank
+    tests = [t(1, "R1").model_copy(update={"visibility": "example"}), t(2, "R2").model_copy(update={"visibility": "sealed"}),
+             t(3, "R3").model_copy(update={"visibility": "sealed"})]
+    return TestBank(spec_hash="h", seed=0, tests=tests)
+
+
+def test_calibration_drops_tests_that_fail_on_the_correct_reference():
+    from evals.sample_eval import calibrate
+    bank, dropped = calibrate(_bank(), rep("T3"))
+    assert dropped == ["T3"] and [x.id for x in bank.tests] == ["T1", "T2"]
+
+
+def test_calibration_refuses_when_the_reference_does_not_boot_or_nothing_sealed_would_remain():
+    import pytest
+    from evals.sample_eval import calibrate
+    with pytest.raises(ValueError, match="did not boot"):
+        calibrate(_bank(), RunReport(boot_ok=False))
+    with pytest.raises(ValueError, match="no sealed"):
+        calibrate(_bank(), rep("T2", "T3"))
+
+
+def test_calibration_keeps_everything_when_the_reference_passes():
+    from evals.sample_eval import calibrate
+    bank, dropped = calibrate(_bank(), rep())
+    assert dropped == [] and len(bank.tests) == 3
