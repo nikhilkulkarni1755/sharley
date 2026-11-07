@@ -156,3 +156,10 @@ def test_generate_passes_codebase_surface_to_workers(tmp_path):
     files = {"app.py": '@app.post("/real/path")\ndef f(): ...'}
     generate_test_cases(spec, JsonRepository(tmp_path), FallbackChain([p]), files=files, workers=1)
     assert "POST /real/path" in p.calls[0][1]
+
+
+def test_workers_pass_the_stored_spec_source_to_the_writer(tmp_path):
+    spec = mkspec(["functional"]).model_copy(update={"source_excerpt": "Key is operator-key"})
+    p = ScriptedProvider("p", [json.dumps({"tests": [{"name": "a", "code": GOOD, "requirement_ids": ["R1"]}]})])
+    generate_test_cases(spec, JsonRepository(tmp_path), FallbackChain([p]), workers=1)
+    assert "Key is operator-key" in p.calls[0][1]

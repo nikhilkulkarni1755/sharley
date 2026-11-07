@@ -8,3 +8,7 @@ billing for a month, and get a summary that includes the total and any house tha
 customer uses their own house key and can only see their own house and bill, never another house. Operators use the
 operator key; everything except the health check needs a key. Bad input must give a clear error, not a crash.
 GET /health returns 200.
+
+Test setup (documented for QA): the operator key is operator-key, sent in the X-API-Key header. The system is deployed with
+12 houses, H001 to H012, each owned by a different customer whose key is key- followed by the house id, for example key-H001
+for H001. Meter readings are already loaded for 2026-01 and 2026-02 for every house, so billing for 2026-02 works out of the box.

@@ -155,3 +155,10 @@ def test_env_example_assertion_only_when_the_project_has_one():
     ast.parse(with_ex.code), ast.parse(without.code)
     assert "declares_every_referenced_variable" in with_ex.code and "declares_every_referenced_variable" not in without.code
     assert "test_app_boots_and_health_returns_200" in without.code
+
+
+def test_original_spec_text_reaches_the_writer_so_credentials_are_not_lost():
+    c, p = chain(reply(draft()))
+    write_tests(c, "functional", "docker-api", [R1], background="Test setup: the operator key is operator-key.")
+    system, user, _ = p.calls[0]
+    assert "operator key is operator-key" in user and "credentials" in system

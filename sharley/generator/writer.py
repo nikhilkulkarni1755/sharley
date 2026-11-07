@@ -22,6 +22,7 @@ class WriteIn(BaseModel):
     requirements: list[dict[str, str]]
     rules: list[str] = Field(default_factory=list)
     conventions: str
+    background: str = ""  # the original spec text: take credentials, ids and setup facts from here, verbatim
     surface: str = ""  # the app's real routes/schemas/env (existing codebases); empty for greenfield specs
 
 
@@ -33,7 +34,8 @@ _COMMON = ("Write runnable tests for ONLY the given requirements. Each test cite
            "and carries a plain-English hint describing the failure WITHOUT showing test code. Tests must hit the "
            "running app over HTTP (BASE_URL) and be independent of one another. Follow the skill rules strictly. "
            "When `surface` is non-empty it lists the application's REAL routes: use only those exact paths and never "
-           "invent or guess a path; if a requirement needs a route that is not listed, skip that requirement's test.")
+           "invent or guess a path; if a requirement needs a route that is not listed, skip that requirement's test. "
+           "Use `background` (the original spec) for credentials, API keys, ids and seeded data: send them exactly as documented.")
 FUNCTIONAL = Step("write_functional_tests", "You are a QA engineer. Cover happy paths, edge cases, boundaries, "
                   "error handling and state transitions. " + _COMMON, WriteIn, WriteOut)
 SECURITY = Step("write_security_tests", "You are a security tester. Cover injection (SQL, command), broken auth "
@@ -62,11 +64,11 @@ def valid_code(code: str, stack: StackName) -> bool:
 
 
 def write_tests(chain: FallbackChain, family: Family, stack: StackName, reqs: list[Requirement],
-                rules: list[str] | None = None, surface: str = "") -> list[DraftTest]:
+                rules: list[str] | None = None, surface: str = "", background: str = "") -> list[DraftTest]:
     if family not in STEPS:
         raise GenerationError(f"family {family!r} is not LLM-written")
     allowed = {r.id for r in reqs}
-    out = STEPS[family].run(chain, WriteIn(family=family, stack=stack, rules=rules or [], conventions=CONVENTIONS[stack], surface=surface,
+    out = STEPS[family].run(chain, WriteIn(family=family, stack=stack, rules=rules or [], conventions=CONVENTIONS[stack], surface=surface, background=background,
                                           requirements=[{"id": r.id, "text": r.text} for r in reqs]))
     drafts = []
     for d in out.tests:

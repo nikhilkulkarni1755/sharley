@@ -219,3 +219,11 @@ def test_codebase_intake_includes_raw_only_for_long_context_chain():
     lc, lp = chain(reqs_reply({"text": "r one", "category": "functional"}), json.dumps({"mappings": []}))
     build_spec(c, IntakeInput(files=PY_FILES), long_chain=lc, chunk_chars=50)
     assert "### app/main.py" in lp.calls[0][1]
+
+
+def test_spec_keeps_a_bounded_excerpt_of_the_source_text():
+    c, _ = chain(reqs_reply(R_LOGIN, R_OWN), COVER_THANKS)
+    spec = build_spec(c, IntakeInput(text=SPEC_TEXT))
+    assert spec.source_excerpt == SPEC_TEXT
+    c2, _ = chain(reqs_reply(R_LOGIN), json.dumps({"mappings": []}))
+    assert len(build_spec(c2, IntakeInput(text="Users can sign up and log in. " + "x " * 9000), long_chain=None, chunk_chars=100000).source_excerpt) == 6000

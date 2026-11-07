@@ -10,7 +10,7 @@ from sharley.gate.context import Context
 from sharley.intake import IntakeInput, build_spec
 from sharley.intake.files import load_codebase
 from sharley.runner.base import RunReport, Sandbox
-from sharley.schemas import Spec, TestCase
+from sharley.schemas import Spec, TestBank, TestCase
 
 # keywords that tie a failing test's requirement text to a planted flaw (matched case-insensitively)
 KEYWORDS = {"FLAW-LOGIC": ("refund",), "FLAW-CVE": ("token", "unsigned", "tamper", "signed"),
@@ -60,3 +60,28 @@ def run_sample(name: str, ctx: Context, sandbox: Sandbox, *, seed: int = 0, work
     if home is not None:
         register(home, name, result.bank_key)
     return result
+
+
+def calibrate(bank: TestBank, reference: RunReport) -> tuple[TestBank, list[str]]:
+    """Drop every test that fails on the known-correct reference: such a test is wrong, not the implementation."""
+    if not reference.boot_ok:
+        raise ValueError("the reference implementation did not boot; refusing to calibrate")
+    bad = failed(reference)
+    kept = [t for t in bank.tests if t.id not in bad]
+    if not kept or not any(t.visibility == "sealed" for t in kept):
+        raise ValueError("calibration would leave no sealed tests")
+    return bank.model_copy(update={"tests": kept}), sorted(bad)
+
+
+def calibrate_sample(name: str, ctx: Context, sandbox: Sandbox, home: Path) -> tuple[int, int, list[str]]:
+    """Calibrate the registered bank of a sample backend against its fixed twin and save it. Returns (before, after, dropped)."""
+    from sharley.judge import load_bank, save_bank
+
+    from evals.sample_backends import load_index
+
+    bank = load_bank(ctx.repo, load_index(home)[name])
+    with tempfile.TemporaryDirectory(prefix="sharley-cal-") as tmp:
+        report = sandbox.run(fixed_copy(name, Path(tmp) / "fixed"), bank.tests, "docker-api")
+    calibrated, dropped = calibrate(bank, report)
+    save_bank(ctx.repo, calibrated)
+    return len(bank.tests), len(calibrated.tests), dropped
