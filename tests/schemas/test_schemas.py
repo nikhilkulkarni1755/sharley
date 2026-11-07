@@ -168,3 +168,16 @@ def test_mutant_split_is_closed_set():
     with pytest.raises(ValidationError):
         Mutant(id="M1", operator="o", category="functional", file="f", line=1, original="a",
                mutated="b", split="test")
+
+
+def test_dump_reload_roundtrip_recomputes_hashes():
+    s = spec()
+    assert Spec.model_validate(s.model_dump()) == s
+    bank = TestBank(spec_hash="h", seed=1, tests=[tc(1, "example")])
+    assert TestBank.model_validate_json(bank.model_dump_json()) == bank
+
+
+def test_forged_hash_in_stored_doc_is_ignored_and_recomputed():
+    d = spec().model_dump()
+    d["spec_hash"] = "forged"
+    assert Spec.model_validate(d).spec_hash == spec().spec_hash
