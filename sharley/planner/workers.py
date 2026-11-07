@@ -27,7 +27,7 @@ class Worker:
             if task.family == "env":
                 drafts = env_tests(self.files, self.stack, task.requirement_ids)
             else:
-                drafts = write_tests(self.chain, task.family, self.stack, reqs, self.rules, self.surface)
+                drafts = write_tests(self.chain, task.family, self.stack, reqs, self.rules, self.surface, spec.source_excerpt)
             self.queue.complete(task.id, [d.model_dump() for d in drafts])
         except Exception as e:  # one bad task must not kill the worker; traceability reports the gap
             self.queue.fail(task.id, f"{type(e).__name__}: {e}")

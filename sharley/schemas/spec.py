@@ -57,6 +57,7 @@ class Spec(Strict):
     assumptions: dict[str, str] = Field(default_factory=dict)
     ignored: list[IgnoredSpan] = Field(default_factory=list)
     coverage_pct: float = Field(default=100.0, ge=0, le=100)
+    source_excerpt: str = Field(default="", max_length=6000)  # the original spec text, so writers can read credentials/ids/setup facts verbatim
 
     @model_validator(mode="after")
     def _consistent(self) -> "Spec":

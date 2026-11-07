@@ -43,7 +43,7 @@ def build_spec(chain: FallbackChain, inp: IntakeInput, *, long_chain: FallbackCh
     reqs, assumptions = tag_requirements(raw, source)
     coverage, ignored = check_coverage(chain, source, reqs)
     spec = Spec(stack=stack, source_hash=sha256_text(source), requirements=reqs, assumptions=assumptions,
-                ignored=ignored, coverage_pct=coverage)
+                ignored=ignored, coverage_pct=coverage, source_excerpt=source[:6000])
     if repo is not None:
         version = len(repo.find("specs", source_hash=spec.source_hash)) + 1
         spec = spec.model_copy(update={"version": version})
