@@ -71,3 +71,18 @@ def test_calibration_keeps_everything_when_the_reference_passes():
     from evals.sample_eval import calibrate
     bank, dropped = calibrate(_bank(), rep())
     assert dropped == [] and len(bank.tests) == 3
+
+
+def test_detectors_are_sealed_so_examples_cannot_hide_the_flaw():
+    from evals.sample_eval import calibrate
+    bank = _bank()
+    bank = bank.model_copy(update={"tests": [bank.tests[0].model_copy(update={"visibility": "example"}),
+                                             bank.tests[1].model_copy(update={"visibility": "example"}), bank.tests[2]]})
+    out, dropped = calibrate(bank, rep(), rep("T1", "T2"))  # T1, T2 catch the flaw (fail on flawed only)
+    assert dropped == [] and [t.visibility for t in out.tests] == ["sealed", "sealed", "sealed"]
+
+
+def test_a_failing_flawed_run_that_did_not_boot_does_not_seal_anything():
+    from evals.sample_eval import calibrate
+    out, _ = calibrate(_bank(), rep(), RunReport(boot_ok=False))
+    assert [t.visibility for t in out.tests] == ["example", "sealed", "sealed"]
