@@ -11,13 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from sharley.api.runs import RecordingSandbox, Run, RunRegistry
+from agents.conversation import Conversation
+from agents.services import LocalServices
+from sharley.api.runs import RecordingSandbox, Run, RunRegistry, result_events
 from sharley.api.views import bank_view
 from sharley.gate import service
 from sharley.gate.context import Context
 from sharley.implementer.agent import safe_target
 from sharley.intake import IntakeInput, build_spec
-from sharley.judge import export_workspace, load_bank, ordered_sealed
+from sharley.judge import export_workspace, load_bank
 from sharley.profiles import PROFILES
 from sharley.schemas import ModelRef, Spec
 from sharley.skills import SkillStore
@@ -34,6 +36,11 @@ class SpecRequest(BaseModel):
 
 class ImageSpecRequest(BaseModel):
     image_b64: str = Field(min_length=1, max_length=11_000_000)  # PNG or JPEG, base64
+
+
+class ChatRequest(BaseModel):
+    session: str = Field(min_length=1, max_length=64, pattern=r"^[\w.-]+$")
+    text: str = Field(max_length=MAX_TEXT)
 
 
 class BankRequest(BaseModel):
@@ -55,6 +62,7 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None) -> FastAPI:
     app.add_middleware(CORSMiddleware, allow_origins=cors_origins or ["http://localhost:3000"],
                        allow_methods=["GET", "POST"], allow_headers=["content-type"])
     registry = RunRegistry()
+    chat = Conversation(LocalServices(ctx))
 
     @app.get("/api/health")
     def health():
@@ -148,6 +156,12 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None) -> FastAPI:
 
         return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
+    @app.post("/api/chat")
+    def chat_endpoint(req: ChatRequest):
+        """Same conversation the ASI:One agents run, for when Agentverse is unreachable."""
+        reply = chat.handle(req.session, req.text)
+        return {"text": reply.text, "card": reply.card}
+
     @app.get("/api/skills/timeline")
     def timeline():
         return [v.model_dump() for v in SkillStore(ctx.repo).timeline()]
@@ -167,13 +181,8 @@ def _execute(ctx: Context, bank, workspace: Path, req: RunRequest, run: Run, rej
         verdict = service.check_submission(bank, workspace, sandbox, req.stack,
                                            ModelRef(provider="external", model=req.implementer_model,
                                                     family=req.implementer_family), repo=ctx.repo)
-        if sandbox.last and sandbox.last.results:
-            by_id = {r.test_id: r for r in sandbox.last.results}
-            for t in bank.examples:
-                run.emit({"type": "example", "id": t.id, "name": t.name, "passed": bool(by_id.get(t.id) and by_id[t.id].passed)})
-            for i, t in enumerate(ordered_sealed(bank), 1):
-                run.emit({"type": "sealed", "index": i, "passed": bool(by_id.get(t.id) and by_id[t.id].passed)})
-        run.emit({"type": "verdict", "verdict": verdict.model_dump(), "summary": verdict.summary(), "rejected_paths": rejected})
+        for ev in result_events(bank, sandbox.last, verdict, rejected):
+            run.emit(ev)
     except Exception as e:
         run.emit({"type": "error", "detail": f"{type(e).__name__}: {e}"[:300]})
     finally:
