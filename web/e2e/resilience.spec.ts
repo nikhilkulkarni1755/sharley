@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { alertOf, buildSpec, demo, generateTests, mockApi, sseBody, submitImplementation } from "./mock";
+import { alertOf, buildSpec, demo, generateTests, gotoIntake, mockApi, sseBody, submitImplementation } from "./mock";
 
 test.describe("friendly errors", () => {
   test("503 on intake is a retryable provider message, and retry works", async ({ page }) => {
@@ -19,8 +19,8 @@ test.describe("friendly errors", () => {
 
   test("422 on an image shows the server's reason", async ({ page }) => {
     await mockApi(page, { image: (r) => r.fulfill({ status: 422, json: { detail: "not a PNG or JPEG" } }) });
-    await page.goto("/");
-    await page.locator('input[type="file"]').setInputFiles({ name: "a.png", mimeType: "image/png", buffer: Buffer.from("junk") });
+    await gotoIntake(page);
+    await page.getByLabel("Choose file").setInputFiles({ name: "a.png", mimeType: "image/png", buffer: Buffer.from("junk") });
     await expect(alertOf(page)).toContainText("Invalid input: not a PNG or JPEG");
   });
 
@@ -75,7 +75,7 @@ test.describe("accessibility and layout", () => {
   test.beforeEach(({ page }) => mockApi(page));
 
   test("tabs are keyboard operable", async ({ page }) => {
-    await page.goto("/");
+    await gotoIntake(page);
     const intake = page.getByRole("tab", { name: "Intake" });
     await intake.focus();
     await page.keyboard.press("ArrowRight");
@@ -85,12 +85,12 @@ test.describe("accessibility and layout", () => {
     await page.keyboard.press("End");
     await expect(page.getByRole("tab", { name: "Eval", selected: true })).toBeFocused();
     await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("tab", { name: "Intake", selected: true })).toBeFocused();
-    await expect(page.getByRole("tabpanel", { name: "Intake" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Playground", selected: true })).toBeFocused();
+    await expect(page.getByRole("tabpanel", { name: "Playground" })).toBeVisible();
   });
 
   test("the spec can be built from the keyboard alone", async ({ page }) => {
-    await page.goto("/");
+    await gotoIntake(page);
     await page.getByLabel(/paste a spec/i).fill("notes app");
     await page.keyboard.press("Tab");
     await page.keyboard.press("Enter");
@@ -102,7 +102,7 @@ test.describe("accessibility and layout", () => {
     await generateTests(page);
     await submitImplementation(page);
     await expect(page.getByRole("region", { name: "Verdict" })).toBeVisible();
-    for (const name of ["Intake", "Judge", "Eval"]) {
+    for (const name of ["Playground", "Intake", "Judge", "Eval"]) {
       await page.getByRole("tab", { name }).click();
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow, `${name} overflows`).toBeLessThanOrEqual(0);
