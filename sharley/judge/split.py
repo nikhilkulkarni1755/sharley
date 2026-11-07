@@ -14,6 +14,8 @@ def split_bank(tests: list[TestCase], spec_hash: str, seed: int, ratio: float = 
         group = sorted((t for t in tests if t.family == family), key=lambda t: _rank(seed, t))
         n = min(round(len(group) * ratio), len(group) - 1)
         example_ids |= {t.id for t in group[:max(n, 0)]}
+    if not example_ids and len(tests) > 1:  # all-singleton families: still show the implementer one example
+        example_ids = {min(tests, key=lambda t: _rank(seed, t)).id}
     tagged = [t.model_copy(update={"visibility": "example" if t.id in example_ids else "sealed"}) for t in tests]
     return TestBank(spec_hash=spec_hash, seed=seed, example_ratio=ratio, tests=tagged)
 
