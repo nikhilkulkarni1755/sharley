@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { applyEvent, createStagger, emptyRun } from "../lib/run";
+import { applyEvent, createStagger, emptyRun, isFinal } from "../lib/run";
 import type { RunEvent } from "../lib/types";
 
 const STAGGER_MS = 25;
@@ -13,7 +13,7 @@ export function useRun() {
   const [stagger] = useState(() =>
     createStagger<RunEvent>((event) => {
       setState((s) => applyEvent(s, event));
-      if (event.type === "verdict" || event.type === "error") setRunning(false);
+      if (isFinal(event)) setRunning(false);
     }, STAGGER_MS),
   );
   const stop = useRef<() => void>(() => {});

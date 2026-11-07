@@ -18,6 +18,11 @@ export const samples: Sample[] = [
   { name: "electricity", title: "Electricity billing", spec: "Bill every house by usage.", files: { "app/main.py": "def bill():\n    return 0\n" }, bank: null },
 ];
 
+export const repoSamples = [
+  { name: "notes", title: "Notes app", url: "https://github.com/acme/notes", pitch: "Private notes with a hidden leak" },
+  { name: "shop", title: "Shop API", url: "https://github.com/acme/shop", pitch: "Carts and checkout" },
+];
+
 export const sseBody = (events: object[]) =>
   events.map((e) => `event: ${(e as { type: string }).type}\ndata: ${JSON.stringify(e)}\n\n`).join("");
 
@@ -30,6 +35,8 @@ export interface Overrides {
   runs?: (route: Route) => Promise<void> | void;
   events?: (route: Route) => Promise<void> | void;
   samples?: (route: Route) => Promise<void> | void;
+  repoSamples?: (route: Route) => Promise<void> | void;
+  repos?: (route: Route) => Promise<void> | void;
   demo?: (route: Route) => Promise<void> | void;
 }
 
@@ -37,6 +44,8 @@ export interface Overrides {
 export async function mockApi(page: Page, o: Overrides = {}) {
   await page.route("**/api/health", (r) => json(r, health));
   await page.route("**/api/samples", o.samples ?? ((r) => json(r, samples)));
+  await page.route("**/api/repos/samples", o.repoSamples ?? ((r) => json(r, repoSamples)));
+  await page.route("**/api/repos", o.repos ?? ((r) => json(r, { run_id: "run1", mode: "sealed" }, 202)));
   await page.route("**/api/demo", o.demo ?? ((r) => json(r, demo)));
   await page.route("**/api/specs", o.specs ?? ((r) => json(r, demo.spec)));
   await page.route("**/api/specs/image", o.image ?? ((r) => json(r, demo.spec)));
@@ -65,6 +74,7 @@ export async function buildSpec(page: Page) {
 export async function generateTests(page: Page) {
   await buildSpec(page);
   await page.getByRole("button", { name: "Generate tests" }).click();
+  await page.getByRole("button", { name: "Open in Judge" }).click();
 }
 
 export async function submitImplementation(page: Page) {

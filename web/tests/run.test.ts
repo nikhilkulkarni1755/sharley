@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { applyEvent, createStagger, emptyRun, tileState } from "../lib/run";
+import { applyEvent, createStagger, emptyRun, isFinal, tileState } from "../lib/run";
 import type { RunEvent, Verdict } from "../lib/types";
 
 const verdict = { status: "Accepted" } as Verdict;
@@ -11,6 +11,18 @@ describe("applyEvent", () => {
     expect(b.examples).toEqual({ ex1: true });
     expect(b.sealed).toEqual({ 3: false });
     expect(emptyRun.sealed).toEqual({});
+  });
+
+  it("folds repo audit events", () => {
+    const stage: RunEvent = { type: "stage", stage: "analyzing", detail: "reading" };
+    const finding: RunEvent = { type: "finding", id: "t1", name: "n", family: "f", requirement_ids: ["R1"], requirement_text: "x", kind: "assert", message: "m" };
+    const report: RunEvent = { type: "report", total: 4, passed: 3, failed: 1, boot_ok: true, build_output: "" };
+    const s = [stage, finding, finding, report].reduce(applyEvent, emptyRun);
+    expect(s.stage?.stage).toBe("analyzing");
+    expect(s.findings).toHaveLength(2);
+    expect(s.report?.passed).toBe(3);
+    expect(isFinal(report)).toBe(true);
+    expect(isFinal(stage)).toBe(false);
   });
 
   it("keeps the verdict and error", () => {

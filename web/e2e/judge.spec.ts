@@ -6,7 +6,7 @@ test.beforeEach(({ page }) => mockApi(page));
 test("generate tests opens Judge with examples and locked sealed tiles, never any sealed code", async ({ page }) => {
   const request = page.waitForRequest("**/api/banks");
   await generateTests(page);
-  expect((await request).postDataJSON()).toEqual({ spec_hash: demo.spec.spec_hash, stack: "docker-api", seed: 0 });
+  expect((await request).postDataJSON()).toEqual({ spec_hash: demo.spec.spec_hash, stack: "docker-api", seed: 0, allow_partial: false });
 
   await expect(page.getByRole("tab", { name: "Judge", selected: true })).toBeVisible();
   const examples = page.getByRole("region", { name: "Example tests" });
@@ -38,7 +38,7 @@ test("submitting streams results, flips tiles and shows the verdict", async ({ p
   const banner = page.getByRole("region", { name: "Verdict" });
   await expect(banner).toContainText("Wrong Answer on sealed test 37 of 58");
   await expect(banner).toContainText("users can read each other's notes");
-  await expect(banner).toContainText("12/12 examples passed");
+  await expect(banner).toContainText("Visible examples: 12/12 passed");
   await expect(banner).toContainText("gpt-5 (openai)");
   await expect(banner).toContainText("claude-sonnet (anthropic)");
   await expect(banner).toContainText("different model families");

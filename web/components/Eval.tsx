@@ -1,6 +1,7 @@
 import { THRESHOLD } from "../lib/curve";
 import type { Demo } from "../lib/types";
 import MutantGrid from "./MutantGrid";
+import SourceChip from "./SourceChip";
 import ScoreCurve from "./ScoreCurve";
 import Timeline from "./Timeline";
 
@@ -17,6 +18,8 @@ export default function Eval({ demo }: { demo: Demo }) {
   return (
     <div className="stack">
       <h2>Eval</h2>
+      <SourceChip kind="recorded" meta={demo.meta} />
+      <p>Real Docker runs of the notes reference app; the test writer was a scripted stand-in, not a model.</p>
       <ul className="scores">
         {cards.map(([label, value]) => (
           <li key={label} className={label === "Production-worthy" && scores.production_worthy >= THRESHOLD ? "ok" : undefined}>

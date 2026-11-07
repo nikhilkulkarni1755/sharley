@@ -9,6 +9,7 @@ import Header from "./Header";
 import Intake from "./Intake";
 import Judge, { type Mode } from "./Judge";
 import Playground from "./Playground";
+import Repo from "./Repo";
 import Tabs, { type TabId } from "./Tabs";
 
 export default function Board() {
@@ -43,6 +44,9 @@ export default function Board() {
       <Tabs active={tab} onChange={setTab} />
       <section role="tabpanel" id="panel-playground" aria-labelledby="tab-playground" hidden={tab !== "playground"}>
         {tab === "playground" && <Playground />}
+      </section>
+      <section role="tabpanel" id="panel-repo" aria-labelledby="tab-repo" hidden={tab !== "repo"}>
+        {tab === "repo" && <Repo />}
       </section>
       <section role="tabpanel" id="panel-intake" aria-labelledby="tab-intake" hidden={tab !== "intake"}>
         <Intake onBank={bankReady} />

@@ -2,6 +2,8 @@
 
 Static Next.js board (Playground, Intake, Judge, Eval) over the Sharley API. It is a window into the verifier: sealed tests never reach the browser.
 
+- **GitHub repo** (second tab): paste a public repo URL (or pick a sample) from `GET /api/repos/samples`; `POST /api/repos` returns a `sealed` run (pre-built hidden tests) or an `audit` run (model-written tests), streamed from `/api/runs/{id}/events`.
+- Every panel carries a LIVE, RECORDED or PRE-BUILT chip saying where its data came from.
 - **Playground** (default tab): pick a sample backend from `GET /api/samples`, edit its code (kept per backend in `sessionStorage`) and run the sealed tests against your edits.
 - **Intake** also accepts a camera photo (`Take a photo`), a live webcam capture (`Use webcam`, needs `camera=(self)` in `Permissions-Policy`) and `Try the sample sketch` (`public/sample-sketch.png`).
 

@@ -1,13 +1,15 @@
 import type { RunEvent } from "../lib/types";
-import { examplesLine, isIndependent, verdictHeadline, verdictTone } from "../lib/verdict";
+import { examplesLine, hidesFailures, isIndependent, sealedLine, verdictHeadline, verdictTone } from "../lib/verdict";
 
-export default function VerdictBanner({ event }: { event: Extract<RunEvent, { type: "verdict" }> }) {
+export default function VerdictBanner({ event, sealed }: { event: Extract<RunEvent, { type: "verdict" }>; sealed: Record<number, boolean> }) {
   const v = event.verdict;
   return (
     <section className={`verdict ${verdictTone(v.status)}`} aria-label="Verdict">
       <h3>{verdictHeadline(v.status, event.summary)}</h3>
       {v.hint && <p className="hint">{v.hint}</p>}
       <p>{examplesLine(v)}</p>
+      <p>{sealedLine(v, sealed)}</p>
+      {hidesFailures(v, sealed) && <p>Passes everything you can see but fails hidden tests</p>}
       <dl>
         <div>
           <dt>Implementer</dt>
