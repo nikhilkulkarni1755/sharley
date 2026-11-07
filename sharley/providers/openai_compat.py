@@ -34,7 +34,12 @@ class OpenAICompatProvider(HttpProvider):
             "model": self.model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": content}],
         }, headers)
+        self._meter(data, "prompt_tokens", "completion_tokens")
         try:
-            return data["choices"][0]["message"]["content"]
+            choice = data["choices"][0]
+            content = choice["message"]["content"]
         except (KeyError, IndexError, TypeError):
             raise ProviderError(f"{self.name} response missing choices[0].message.content") from None
+        if not content:  # reasoning models can spend the whole budget thinking and return null
+            raise ProviderError(f"{self.name} returned empty content (finish_reason={choice.get('finish_reason')})")
+        return content

@@ -10,6 +10,7 @@ from typing import TextIO
 
 from sharley.gate import service
 from sharley.gate.context import Context, load_env
+from sharley.harness.budget import Meter
 from sharley.gate.git import GhHost
 from sharley.gate.watch import watch_once
 from sharley.gate.report import exit_code, github_annotation, render
@@ -56,6 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--implementer-family", required=True)
     w.add_argument("--interval", type=int, default=0, help="seconds between polls; 0 = run once")
     sub.add_parser("images", help="build the sandbox runner images")
+    sub.add_parser("spend", help="show paid-API spend against the cap")
     sv = sub.add_parser("serve", help="run the HTTP API for the web board")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8000)
@@ -131,6 +133,15 @@ def cmd_images(a, ctx: Context, out: TextIO) -> int:
     return OK
 
 
+def cmd_spend(a, ctx: Context, out: TextIO) -> int:
+    m = Meter.from_env(ctx.env)
+    d = m._read()
+    print(f"spent ${d['total_usd']:.4f} of ${m.limit:.2f} cap over {d['calls']} calls", file=out)
+    for name, p in d["by_provider"].items():
+        print(f"  {name}: ${p['usd']:.4f} ({p['in']} in / {p['out']} out tokens)", file=out)
+    return OK
+
+
 def cmd_serve(a, ctx: Context, out: TextIO) -> int:
     import uvicorn
 
@@ -142,7 +153,7 @@ def cmd_serve(a, ctx: Context, out: TextIO) -> int:
 
 
 COMMANDS: dict[str, Callable] = {"spec": cmd_spec, "bank": cmd_bank, "check": cmd_check, "watch": cmd_watch,
-                                 "images": cmd_images, "serve": cmd_serve}
+                                 "images": cmd_images, "serve": cmd_serve, "spend": cmd_spend}
 
 
 def main(argv: list[str] | None = None, env: Mapping[str, str] | None = None, out: TextIO | None = None,
