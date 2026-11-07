@@ -14,6 +14,14 @@ ASSUMPTION_ID = r"^A\d+$"
 class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_computed(cls, data):
+        """Dumps include computed fields (hashes); accept them on reload and recompute."""
+        if isinstance(data, dict):
+            return {k: v for k, v in data.items() if k not in cls.model_computed_fields}
+        return data
+
 
 class Evidence(Strict):
     kind: Literal["observed", "inferred"]
