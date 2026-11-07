@@ -72,3 +72,16 @@ def load_index(home: Path) -> dict[str, str]:
         return json.loads((home / "samples.json").read_text())
     except (OSError, ValueError):
         return {}
+
+
+OWNER = "nikhilkulkarni1755"
+SAMPLE_REPOS = {"payments": f"https://github.com/{OWNER}/sharley-demo-payments-api",
+                "electricity": f"https://github.com/{OWNER}/sharley-demo-electricity"}
+PITCHES = {"payments": "Payments for users AND AI agents: hides a logic bug and a security hole",
+           "electricity": "Electricity billing: 3 of 12 houses silently get free power"}
+
+
+def sample_for_url(url: str) -> str | None:
+    """Name of the sample backend whose public repo this is (judged against its pre-built hidden tests), else None."""
+    norm = url.strip().rstrip("/").removesuffix(".git").lower()
+    return next((n for n, u in SAMPLE_REPOS.items() if u.lower() == norm), None)

@@ -15,6 +15,8 @@ from pydantic import BaseModel, Field
 from agents.conversation import Conversation
 from agents.services import LocalServices
 from sharley.api.guard import Guard
+from agents.repo import BadRepo, clone as clone_repo, validate as validate_repo
+from sharley.api.repos import run_repo_job
 from sharley.api.runs import RecordingSandbox, Run, RunRegistry, result_events
 from sharley.api.views import bank_view
 from sharley.gate import service
@@ -45,6 +47,11 @@ class ChatRequest(BaseModel):
     text: str = Field(max_length=MAX_TEXT)
 
 
+class RepoRequest(BaseModel):
+    url: str = Field(min_length=1, max_length=200)
+    branch: str = Field(default="", max_length=100)
+
+
 class BankRequest(BaseModel):
     spec_hash: str
     stack: str = "docker-api"
@@ -59,13 +66,14 @@ class RunRequest(BaseModel):
     stack: str = "docker-api"
 
 
-def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard | None = None) -> FastAPI:
+def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard | None = None, fetch=None) -> FastAPI:
     app = FastAPI(title="Sharley", docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.add_middleware(CORSMiddleware, allow_origins=cors_origins or ["http://localhost:3000"],
                        allow_origin_regex=ctx.env.get("SHARLEY_CORS_ORIGIN_REGEX") or None,
                        allow_methods=["GET", "POST"], allow_headers=["content-type"])
     registry = RunRegistry()
     guard = guard or Guard.from_env(ctx.env)
+    fetch = fetch or clone_repo
     admin = Depends(guard.require_admin)
     chat = Conversation(LocalServices(ctx))
 
@@ -187,6 +195,38 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard
                 bank = None
             out.append({"name": name, "title": TITLES[name], "spec": spec_text(name), "files": playground_files(name), "bank": bank})
         return out
+
+    @app.get("/api/repos/samples")
+    def repo_samples():
+        from evals.sample_backends import NAMES, PITCHES, SAMPLE_REPOS, TITLES
+
+        return [{"name": n, "title": TITLES[n], "url": SAMPLE_REPOS[n], "pitch": PITCHES[n]} for n in NAMES]
+
+    @app.post("/api/repos", status_code=202)
+    def start_repo(req: RepoRequest, request: Request):
+        """Known sample repos are judged against pre-built hidden tests (free). Any other public repo is audited with
+        freshly generated tests, which costs model tokens, so on a public deployment it needs the admin key."""
+        from evals.sample_backends import load_index, sample_for_url
+
+        try:
+            url, branch = validate_repo(req.url, req.branch)
+        except BadRepo as e:
+            raise HTTPException(status_code=422, detail=str(e)) from None
+        name, bank = sample_for_url(url), None
+        if name:
+            key = load_index(Path(ctx.env.get("SHARLEY_HOME", ".sharley"))).get(name)
+            try:
+                bank = load_bank(ctx.repo, key) if key else None
+            except KeyError:
+                bank = None
+            if bank is None:
+                raise HTTPException(status_code=503, detail="this sample's hidden tests are not prepared on this server")
+        else:
+            guard.require_admin(request)
+        guard.acquire_run(request)
+        run = registry.create()
+        threading.Thread(target=run_repo_job, args=(ctx, run, url, branch, bank, fetch, guard), daemon=True).start()
+        return {"run_id": run.id, "mode": "sealed" if bank else "audit"}
 
     @app.get("/api/skills/timeline")
     def timeline():

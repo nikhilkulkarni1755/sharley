@@ -36,3 +36,4 @@ copied from other projects.
 | Sample backends (payments, electricity) | `sample-backends/` | #33 |
 | Playground backend + guard | `sharley/api/` | #34 |
 | Bank calibration + spec background | `evals/sample_eval.py` | #36 |
+| GitHub repo endpoint | `sharley/api/repos.py` | #40 |
