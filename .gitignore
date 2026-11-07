@@ -5,6 +5,10 @@ __pycache__/
 .coverage
 .sharley/
 .env
+.env.*
+!.env.example
+*.pem
+*.key
 node_modules/
 .next/
 out/
