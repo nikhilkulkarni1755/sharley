@@ -8,3 +8,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 | Typed schemas | `sharley/schemas/` | #1 |
 | Model harness | `sharley/harness/` | #3 |
 | Provider adapters + chains | `sharley/providers/` | #4 |
+| Storage (Mongo + JSON fallback) | `sharley/storage/` | #5 |
