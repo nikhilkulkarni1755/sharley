@@ -203,3 +203,9 @@ def test_real_environment_beats_dotenv_and_blank_template_values_never_blank_it(
     env = load_env({"ANTHROPIC_API_KEY": "from-shell"}, f)
     assert env["ANTHROPIC_API_KEY"] == "from-shell" and env["LOCAL_LLM_URL"] == "http://file"
     assert "META_API_KEY" not in env
+
+
+def test_agents_and_spend_commands_are_registered():
+    from sharley.gate.cli import COMMANDS, build_parser
+    assert {"agents", "spend"} <= set(COMMANDS)
+    assert build_parser().parse_args(["agents", "--no-mailbox"]).no_mailbox is True

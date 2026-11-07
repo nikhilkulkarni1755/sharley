@@ -140,3 +140,72 @@ def test_offline_flag_skips_mongo_even_if_configured(tmp_path):
     called = []
     env = {"MONGODB_URI": "mongodb://x", "SHARLEY_OFFLINE": "1", "SHARLEY_HOME": str(tmp_path)}
     assert isinstance(open_repository(env, lambda u: called.append(u)), JsonRepository) and not called
+
+
+# ---- real MongoDB (local container); skipped when unreachable
+@pytest.fixture
+def real_mongo():
+    import os
+    uri = os.environ.get("MONGODB_TEST_URI", "mongodb://127.0.0.1:27018")
+    pymongo = pytest.importorskip("pymongo")
+    client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=1500)
+    try:
+        client.admin.command("ping")
+    except Exception:
+        pytest.skip("no MongoDB reachable")
+    db = client["sharley_test"]
+    for name in db.list_collection_names():
+        db.drop_collection(name)
+    yield MongoRepository(db)
+    client.drop_database("sharley_test")
+
+
+@pytest.mark.docker
+def test_real_mongo_contract(real_mongo):
+    r = real_mongo
+    r.put("specs", "s1", {"a": 1})
+    assert r.get("specs", "s1") == {"a": 1} and r.get("specs", "nope") is None
+    r.put("mutants", "m1", {"split": "train"})
+    r.put("mutants", "m2", {"split": "heldout"})
+    assert r.find("mutants", split="heldout") == [{"split": "heldout"}]
+    assert r.delete("specs", "s1") is True and r.delete("specs", "s1") is False
+
+
+@pytest.mark.docker
+def test_real_mongo_queue_claims_each_task_exactly_once(real_mongo):
+    for i in range(20):
+        real_mongo.put("queue", f"t{i}", {"status": "pending"})
+    got, lock = [], threading.Lock()
+
+    def worker():
+        while (c := real_mongo.claim("queue")):
+            with lock:
+                got.append(c[0])
+
+    ts = [threading.Thread(target=worker) for _ in range(5)]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    assert sorted(got) == sorted(f"t{i}" for i in range(20))
+
+
+@pytest.mark.docker
+def test_real_mongo_rejects_operator_injection_in_filters_and_ids(real_mongo):
+    real_mongo.put("runs", "r1", {"owner": "alice"})
+    for bad in ({"$ne": "zzz"}, {"$gt": ""}, ["alice"]):
+        with pytest.raises(ValueError):
+            real_mongo.find("runs", owner=bad)
+    for bad_id in ({"$ne": ""}, {"$gt": ""}, 5, None):
+        with pytest.raises(ValueError):
+            real_mongo.get("runs", bad_id)
+        with pytest.raises(ValueError):
+            real_mongo.delete("runs", bad_id)
+    assert real_mongo.get("runs", "r1") == {"owner": "alice"}  # nothing was matched or deleted by the attempts
+
+
+def test_mongo_store_injection_guards_with_fake_collection():
+    repo = MongoRepository(FakeDb())
+    repo.put("runs", "r1", {"owner": "alice"})
+    with pytest.raises(ValueError):
+        repo.find("runs", owner={"$ne": "x"})
+    with pytest.raises(ValueError):
+        repo.get("runs", {"$ne": ""})
