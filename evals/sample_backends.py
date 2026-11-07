@@ -75,8 +75,8 @@ def load_index(home: Path) -> dict[str, str]:
 
 
 OWNER = "nikhilkulkarni1755"
-SAMPLE_REPOS = {"payments": f"https://github.com/{OWNER}/sharley-demo-payments-api",
-                "electricity": f"https://github.com/{OWNER}/sharley-demo-electricity"}
+SAMPLE_REPOS = {"payments": f"https://github.com/{OWNER}/sharley-example-payments-api",
+                "electricity": f"https://github.com/{OWNER}/sharley-example-electricity-billing"}
 PITCHES = {"payments": "Payments for users AND AI agents: hides a logic bug and a security hole",
            "electricity": "Electricity billing: 3 of 12 houses silently get free power"}
 
