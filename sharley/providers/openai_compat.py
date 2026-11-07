@@ -2,7 +2,7 @@
 import base64
 
 from sharley.harness.provider import ProviderError
-from sharley.providers.base import HttpProvider
+from sharley.providers.base import HttpProvider, sniff_mime
 
 
 class OpenAICompatProvider(HttpProvider):
@@ -27,7 +27,7 @@ class OpenAICompatProvider(HttpProvider):
         content: list | str = user
         if images:
             content = [{"type": "text", "text": user}] + [
-                {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(i).decode()}}
+                {"type": "image_url", "image_url": {"url": f"data:{sniff_mime(i)};base64," + base64.b64encode(i).decode()}}
                 for i in images]
         headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
         data = self._post(f"{self.base_url}/chat/completions", {
