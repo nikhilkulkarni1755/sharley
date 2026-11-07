@@ -17,7 +17,7 @@ agents = ["uagents>=0.18"]
 sharley = "sharley.gate.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["sharley*", "agents*"]
+include = ["sharley*", "agents*", "evals*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
