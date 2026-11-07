@@ -5,6 +5,19 @@ from sharley.harness.budget import Meter
 from sharley.harness.provider import ModelProvider, ProviderError
 
 
+def sniff_mime(data: bytes) -> str:
+    """Real media type from magic bytes: providers reject a JPEG labelled as PNG."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG"):
+        return "image/png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    if data[:3] == b"GIF":
+        return "image/gif"
+    return "image/png"
+
+
 class HttpProvider(ModelProvider):
     def __init__(self, *, api_key: str = "", base_url: str = "", model: str = "",
                  timeout: float = 60.0, client: httpx.Client | None = None, meter: Meter | None = None):

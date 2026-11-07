@@ -3,7 +3,7 @@ google-genai >= 2.3.0 docs once a key is available (see OPEN_QUESTIONS.md)."""
 import base64
 
 from sharley.harness.provider import ProviderError
-from sharley.providers.base import HttpProvider
+from sharley.providers.base import HttpProvider, sniff_mime
 
 THINKING_LEVELS = ("low", "medium", "high")
 
@@ -21,7 +21,7 @@ class GeminiProvider(HttpProvider):
 
     def complete(self, system, user, *, images=None):
         parts: list = [{"type": "text", "text": user}] + [
-            {"type": "image", "mime_type": "image/png", "data": base64.b64encode(i).decode()} for i in images or []]
+            {"type": "image", "mime_type": sniff_mime(i), "data": base64.b64encode(i).decode()} for i in images or []]
         # No temperature/top_p/top_k/cached_content: the model rejects them.
         data = self._post(f"{self.base_url}/interactions", {
             "model": self.model, "system_instruction": system, "input": parts,

@@ -1,5 +1,5 @@
 """Image -> structured description via a vision-capable model."""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from sharley.harness import FallbackChain, Step
 
@@ -16,6 +16,13 @@ class ImageDescription(BaseModel):
     screens: list[str] = Field(default_factory=list)
     flows: list[str] = Field(default_factory=list)
     arrows: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _not_empty(self) -> "ImageDescription":
+        """An all-empty description is a failed read, so the step retries and then escalates to the next provider."""
+        if not (self.entities or self.screens or self.flows or self.arrows):
+            raise ValueError("the description is empty; describe what is visible in the image")
+        return self
 
 
 DESCRIBE = Step("describe_image", "Describe the hand-drawn diagram, wireframe or screenshot. List entities, "

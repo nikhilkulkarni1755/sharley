@@ -170,10 +170,11 @@ def test_oversized_image_rejected():
         validate_image(PNG + b"0" * 9_000_000)
 
 
-def test_blank_image_description_rejected():
-    c, _ = chain(json.dumps({}))
-    with pytest.raises(ValueError):
+def test_blank_image_description_fails_the_step_after_retries():
+    c, p = chain(*[json.dumps({})] * 3)
+    with pytest.raises(StepFailed, match="empty"):
         describe_image(c, PNG)
+    assert len(p.calls) == 3
 
 
 # ---- codebase
@@ -227,3 +228,11 @@ def test_spec_keeps_a_bounded_excerpt_of_the_source_text():
     assert spec.source_excerpt == SPEC_TEXT
     c2, _ = chain(reqs_reply(R_LOGIN), json.dumps({"mappings": []}))
     assert len(build_spec(c2, IntakeInput(text="Users can sign up and log in. " + "x " * 9000), long_chain=None, chunk_chars=100000).source_excerpt) == 6000
+
+
+def test_empty_image_description_escalates_to_the_next_provider_instead_of_failing():
+    JPG = b"\xff\xd8\xff\xe0" + b"0" * 20
+    weak = ScriptedProvider("weak", [json.dumps({"entities": [], "flows": []})] * 3)
+    strong = ScriptedProvider("strong", [json.dumps({"entities": ["Loan agent"], "arrows": ["gateway -> agent"]})])
+    text = describe_image(FallbackChain([weak, strong]), JPG)
+    assert "Entity: Loan agent" in text and len(weak.calls) == 3 and strong.calls[0][2] == [JPG]

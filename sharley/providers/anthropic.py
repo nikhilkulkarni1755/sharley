@@ -1,7 +1,7 @@
 import base64
 
 from sharley.harness.provider import ProviderError
-from sharley.providers.base import HttpProvider
+from sharley.providers.base import HttpProvider, sniff_mime
 
 
 class AnthropicProvider(HttpProvider):
@@ -14,7 +14,7 @@ class AnthropicProvider(HttpProvider):
     def complete(self, system, user, *, images=None):
         content: list | str = user
         if images:
-            content = [{"type": "image", "source": {"type": "base64", "media_type": "image/png",
+            content = [{"type": "image", "source": {"type": "base64", "media_type": sniff_mime(i),
                                                     "data": base64.b64encode(i).decode()}} for i in images]
             content.append({"type": "text", "text": user})
         data = self._post(f"{self.base_url}/v1/messages", {
