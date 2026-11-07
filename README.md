@@ -11,6 +11,12 @@ spec ──▶ requirements R1..Rn (observed | inferred, coverage %) ──▶ p
    submission ──▶ tamper check ──▶ clean Docker sandbox ──▶ Accepted | Wrong Answer on sealed test 37 of 58 (R7) | ...
 ```
 
+## Try it
+
+**Judge playground:** pick a deliberately flawed backend (payments for users and AI agents, or electricity billing), edit the code,
+and run the hidden tests: a wrong fix gets `Wrong Answer on sealed test N of M`, a right one gets `Accepted`. See `DEMO.md`.
+Public link: `deploy/quick-demo.sh`; production design: `DEPLOYMENT.md`. Sample backends and ground truth: `sample-backends/`.
+
 ## Quick start
 
 ```

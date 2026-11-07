@@ -62,6 +62,7 @@ class RunRequest(BaseModel):
 def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard | None = None) -> FastAPI:
     app = FastAPI(title="Sharley", docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.add_middleware(CORSMiddleware, allow_origins=cors_origins or ["http://localhost:3000"],
+                       allow_origin_regex=ctx.env.get("SHARLEY_CORS_ORIGIN_REGEX") or None,
                        allow_methods=["GET", "POST"], allow_headers=["content-type"])
     registry = RunRegistry()
     guard = guard or Guard.from_env(ctx.env)

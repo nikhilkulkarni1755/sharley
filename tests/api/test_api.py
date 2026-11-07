@@ -294,3 +294,13 @@ def test_finished_runs_delete_their_workspace(tmp_path):
     wait_events(c, run["run_id"])
     _t.sleep(0.3)
     assert set(glob.glob(tempfile.gettempdir() + "/sharley-sub-*")) == before
+
+
+def test_cors_origin_regex_allows_tunnel_urls_and_nothing_else(tmp_path):
+    ctx = Context(env={"SHARLEY_CORS_ORIGIN_REGEX": r"https://[a-z0-9-]+\.trycloudflare\.com"}, repo=JsonRepository(tmp_path),
+                  verifier=FallbackChain([ScriptedProvider("a")]), long_context=FallbackChain([ScriptedProvider("s")]), sandbox=FakeSandbox())
+    c = TestClient(create_app(ctx))
+    ok = c.get("/api/health", headers={"Origin": "https://quiet-fox-123.trycloudflare.com"})
+    bad = c.get("/api/health", headers={"Origin": "https://evil.trycloudflare.com.attacker.io"})
+    assert ok.headers.get("access-control-allow-origin") == "https://quiet-fox-123.trycloudflare.com"
+    assert "access-control-allow-origin" not in bad.headers
