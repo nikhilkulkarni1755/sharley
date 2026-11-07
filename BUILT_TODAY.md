@@ -24,3 +24,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 | HTTP API + SSE | `sharley/api/` | #19 |
 | Demo fixtures (real Docker runs) | `evals/fixtures/` | #23 |
 | Fetch.ai uAgents + chat fallback | `agents/` | #24 |
+| API deployment image | `deploy/` | #25 |
