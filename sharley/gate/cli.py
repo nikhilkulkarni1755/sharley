@@ -83,6 +83,8 @@ def cmd_spec(a, ctx: Context, out: TextIO) -> int:
 def cmd_bank(a, ctx: Context, out: TextIO) -> int:
     spec = Spec.model_validate_json(a.spec.read_text())
     files = load_codebase(a.repo) if a.repo else None
+    if files is None:
+        print("note: no --repo given; tests are written from the spec alone and may guess endpoint paths", file=out)
     try:
         bank = service.make_bank(spec, ctx.repo, ctx.verifier, stack=a.stack, files=files, seed=a.seed,
                                  allow_partial=a.allow_partial)

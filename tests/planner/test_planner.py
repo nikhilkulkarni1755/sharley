@@ -148,3 +148,11 @@ def test_trace_flags_uncovered_and_unknown_refs():
 def test_trace_sorts_ids_numerically():
     spec = mkspec(["functional"] * 11)
     assert trace(spec, []).uncovered[-2:] == ["R10", "R11"]
+
+
+def test_generate_passes_codebase_surface_to_workers(tmp_path):
+    spec = mkspec(["functional"])
+    p = ScriptedProvider("p", [json.dumps({"tests": [{"name": "a", "code": GOOD, "requirement_ids": ["R1"]}]})])
+    files = {"app.py": '@app.post("/real/path")\ndef f(): ...'}
+    generate_test_cases(spec, JsonRepository(tmp_path), FallbackChain([p]), files=files, workers=1)
+    assert "POST /real/path" in p.calls[0][1]

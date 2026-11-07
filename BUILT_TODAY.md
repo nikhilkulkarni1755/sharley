@@ -32,3 +32,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 Every row is a merged PR; `git log --merges --format='%h %ad %s' --date=iso` gives timestamps. Nothing here was
 copied from other projects.
 | Spend cap + ledger | `sharley/harness/budget.py` | #28 |
+| Codebase surface fixes | `sharley/intake/codebase.py` | #29 |

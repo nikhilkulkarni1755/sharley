@@ -134,3 +134,16 @@ def test_hostile_env_names_cannot_inject_code_into_generated_tests():
     (t,) = env_tests(files, "docker-api", ["R1"])
     ast.parse(t.code)
     assert "rm -rf" not in t.code
+
+
+def test_surface_reaches_the_writer_prompt_and_forbids_inventing_paths():
+    c, p = chain(reply(draft()))
+    write_tests(c, "functional", "docker-api", [R1], surface="Routes:\n- POST /users/v1/login")
+    system, user, _ = p.calls[0]
+    assert "POST /users/v1/login" in user and "never invent" in system
+
+
+def test_greenfield_has_empty_surface():
+    c, p = chain(reply(draft()))
+    write_tests(c, "functional", "docker-api", [R1])
+    assert '"surface":""' in p.calls[0][1]
