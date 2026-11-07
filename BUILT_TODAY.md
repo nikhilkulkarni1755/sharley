@@ -17,3 +17,4 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 | Judge (sealed tests + verdicts) | `sharley/judge/` | #12 |
 | Reference notes app + oracle | `evals/` | #13 |
 | Mutation engine + graders | `sharley/mutation/, evals/graders/` | #14 |
+| Versioned skills + rollback | `sharley/skills/` | #15 |
