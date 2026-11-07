@@ -26,7 +26,8 @@ test.describe("friendly errors", () => {
 
   test("503 when generating tests is retryable", async ({ page }) => {
     await mockApi(page, { banks: (r) => r.fulfill({ status: 503, json: { detail: "test generation failed, please retry: X" } }) });
-    await generateTests(page);
+    await buildSpec(page);
+    await page.getByRole("button", { name: "Generate tests" }).click();
     await expect(alertOf(page)).toContainText(/provider unavailable/i);
     await expect(page.getByRole("tab", { name: "Intake", selected: true })).toBeVisible();
   });

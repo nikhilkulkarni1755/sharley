@@ -74,6 +74,7 @@ export async function buildSpec(page: Page) {
 export async function generateTests(page: Page) {
   await buildSpec(page);
   await page.getByRole("button", { name: "Generate tests" }).click();
+  await page.getByRole("button", { name: "Open in Judge" }).click();
 }
 
 export async function submitImplementation(page: Page) {

@@ -74,7 +74,7 @@ test("audit mode shows stages, surface tiles, finding cards and the report", asy
   );
   await open(page);
   await verify(page);
-  await expect(page.getByRole("heading", { name: "7 of 10 generated tests passed" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "7 of 10 generated tests passed", exact: true })).toBeVisible();
   await expect(page.getByRole("list", { name: "Progress" }).locator("li")).toHaveCount(4);
   const tiles = page.getByRole("list", { name: "Repo surface" });
   await expect(tiles).toContainText("12");

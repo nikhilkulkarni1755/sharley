@@ -6,7 +6,7 @@ test.beforeEach(({ page }) => mockApi(page));
 test("generate tests opens Judge with examples and locked sealed tiles, never any sealed code", async ({ page }) => {
   const request = page.waitForRequest("**/api/banks");
   await generateTests(page);
-  expect((await request).postDataJSON()).toEqual({ spec_hash: demo.spec.spec_hash, stack: "docker-api", seed: 0 });
+  expect((await request).postDataJSON()).toEqual({ spec_hash: demo.spec.spec_hash, stack: "docker-api", seed: 0, allow_partial: false });
 
   await expect(page.getByRole("tab", { name: "Judge", selected: true })).toBeVisible();
   const examples = page.getByRole("region", { name: "Example tests" });
