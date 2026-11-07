@@ -25,3 +25,9 @@ Each row links to the merged PR that introduced it (`git log --merges` has times
 | Demo fixtures (real Docker runs) | `evals/fixtures/` | #23 |
 | Fetch.ai uAgents + chat fallback | `agents/` | #24 |
 | API deployment image | `deploy/` | #25 |
+| Next.js board + Playwright/Vitest | `web/` | #21 |
+| Sandbox isolation hardening | `sharley/runner/docker.py` | #11 |
+| Pytest summary classification fix | `sharley/runner/parse.py` | #22 |
+
+Every row is a merged PR; `git log --merges --format='%h %ad %s' --date=iso` gives timestamps. Nothing here was
+copied from other projects.
