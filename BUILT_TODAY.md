@@ -37,3 +37,4 @@ copied from other projects.
 | Playground backend + guard | `sharley/api/` | #34 |
 | Bank calibration + spec background | `evals/sample_eval.py` | #36 |
 | GitHub repo endpoint | `sharley/api/repos.py` | #40 |
+| Project zip export | `sharley/gate/project.py` | #45 |

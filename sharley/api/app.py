@@ -7,7 +7,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -20,6 +20,7 @@ from sharley.api.repos import run_repo_job
 from sharley.api.runs import RecordingSandbox, Run, RunRegistry, result_events
 from sharley.api.views import bank_view
 from sharley.gate import service
+from sharley.gate.project import build_project_zip
 from sharley.harness.budget import BudgetExceeded
 from sharley.gate.context import Context
 from sharley.implementer.agent import safe_target
@@ -46,6 +47,10 @@ class ImageSpecRequest(BaseModel):
 class ChatRequest(BaseModel):
     session: str = Field(min_length=1, max_length=64, pattern=r"^[\w.-]+$")
     text: str = Field(max_length=MAX_TEXT)
+
+
+class ProjectRequest(BaseModel):
+    image_b64: str | None = Field(default=None, max_length=11_000_000)  # the original photo, so the project can include it
 
 
 class RepoRequest(BaseModel):
@@ -126,6 +131,24 @@ def create_app(ctx: Context, cors_origins: list[str] | None = None, guard: Guard
             return bank_view(load_bank(ctx.repo, key))
         except KeyError:
             raise HTTPException(status_code=404, detail="unknown bank") from None
+
+    @app.post("/api/banks/{key}/project")
+    def download_project(key: str, req: ProjectRequest):
+        """A zip to drop into Claude Code: spec, visible example tests, contract, brief (never the hidden tests)."""
+        try:
+            bank = load_bank(ctx.repo, key)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="unknown bank") from None
+        doc = ctx.repo.get("specs", bank.spec_hash)
+        if doc is None:
+            raise HTTPException(status_code=404, detail="unknown spec")
+        try:
+            image = base64.b64decode(req.image_b64, validate=True) if req.image_b64 else None
+            data = build_project_zip(Spec.model_validate(doc), bank, image)
+        except ValueError as e:  # bad base64, not a PNG/JPEG, too large
+            raise HTTPException(status_code=422, detail=str(e)) from None
+        return Response(content=data, media_type="application/zip",
+                        headers={"Content-Disposition": f'attachment; filename="sharley-project-{bank.spec_hash[:8]}.zip"'})
 
     @app.post("/api/runs", status_code=202)
     def start_run(req: RunRequest, request: Request):
