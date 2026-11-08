@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "stack": null,
+  "source_hash": "99b8435e677e601badcb56e467d5f7c700799712874e8430c2a19bf97d6dba92",
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "The system provides an input form for applying for a loan via an agent, collecting name, ssn, email, type_loan, description, identifier, and loan_provider.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Input form box: name, ssn, email, type_loan, description, identifier, loan_provider",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R2",
+      "text": "The input form data is sent to the API gateway.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "input form data (name, ssn, email, type_loan, description, identifier, loan_provider) is sent to the api gateway",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R3",
+      "text": "The API gateway passes the loan request to the loan agent.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "api gateway passes the request to the loan agent",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R4",
+      "text": "The API gateway routes the request to an SSN validity check.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "api gateway leads down to the ssn validity box",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R5",
+      "text": "The loan agent interacts bidirectionally with the SSN validity check.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "ssn validity <-> loan agent",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R6",
+      "text": "The loan agent interacts bidirectionally with the credit check.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "credit check <-> loan agent (arrow heads at both ends)",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R7",
+      "text": "The loan agent reads from and writes to the database.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "db <-> loan agent (double-headed arrow)",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R8",
+      "text": "The loan agent outputs a result to a verified identity step.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "loan agent output goes to verified identity",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R9",
+      "text": "The loan agent output goes to a final human (manager) review.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "loan agent output goes to final human (manager) review",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R10",
+      "text": "The loan agent sends records of its activity to the audit log.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "loan agent sends to audit log",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R11",
+      "text": "The audit log connects to the submit request step.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "audit log connects to submit request",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R12",
+      "text": "The submit request step is connected to the final human (manager) review.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "submit request is connected to final human (manager) review",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R13",
+      "text": "A loan request requires a final human (manager) review before it is finalized.",
+      "category": "functional",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A1"
+      }
+    },
+    {
+      "id": "R14",
+      "text": "The SSN must be validated for validity before the loan is processed.",
+      "category": "security",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "ssn validity (\"ssn valid?\" box)",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R15",
+      "text": "Input form fields must be validated server-side (format, type, length), including SSN and email format.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A2"
+      }
+    },
+    {
+      "id": "R16",
+      "text": "The API gateway must authenticate and authorize requesters before forwarding requests to the loan agent.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A3"
+      }
+    },
+    {
+      "id": "R17",
+      "text": "SSN and other PII must be encrypted in transit and at rest in the database.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A4"
+      }
+    },
+    {
+      "id": "R18",
+      "text": "The SSN must be masked or excluded from logs, including the audit log.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A5"
+      }
+    },
+    {
+      "id": "R19",
+      "text": "The audit log must be tamper-resistant and append-only.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A6"
+      }
+    },
+    {
+      "id": "R20",
+      "text": "Only authorized managers can access the final review step.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A7"
+      }
+    },
+    {
+      "id": "R21",
+      "text": "The API gateway should apply rate limiting to the loan application endpoint.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A8"
+      }
+    }
+  ],
+  "assumptions": {
+    "A1": "Inferred from the manager review being a final step in the flow; human oversight of the automated agent's decision.",
+    "A2": "Inferred input validation for user-supplied PII entering the API gateway.",
+    "A3": "Inferred: an API gateway handling loan applications should enforce authentication/authorization.",
+    "A4": "Inferred: SSN is sensitive personal data stored in db and transmitted via the gateway.",
+    "A5": "Inferred: the audit log should not leak sensitive PII.",
+    "A6": "Inferred: audit logs serve accountability for the agent's actions and decisions.",
+    "A7": "Inferred access control for the human review role.",
+    "A8": "Inferred protection against abuse of a public endpoint that triggers credit and SSN checks."
+  },
+  "ignored": [],
+  "coverage_pct": 100.0,
+  "source_excerpt": "Entity: Apply for loan via agent (title)\nEntity: Input form box: name, ssn, email, type_loan, description, identifier, loan_provider\nEntity: api gateway\nEntity: loan agent\nEntity: ssn validity (\"ssn valid?\" box)\nEntity: credit check\nEntity: db\nEntity: verified identity\nEntity: final human (manager) review\nEntity: submit request\nEntity: audit log\nFlow: Apply for loan via agent: input form data (name, ssn, email, type_loan, description, identifier, loan_provider) is sent to the api gateway\nFlow: api gateway passes the request to the loan agent\nFlow: api gateway leads down to the ssn validity box\nFlow: loan agent interacts with ssn validity, credit check and db\nFlow: loan agent output goes to verified identity\nFlow: loan agent output goes to final human (manager) review\nFlow: loan agent sends to audit log\nFlow: audit log connects to submit request\nFlow: submit request is connected to final human (manager) review\nArrow: input form box -> api gateway\nArrow: api gateway -> loan agent (arrow beside the title)\nArrow: api gateway -> ssn validity\nArrow: db <-> loan agent (double-headed arrow)\nArrow: credit check <-> loan agent (arrow heads at both ends)\nArrow: ssn validity <-> loan agent (long line with arrowheads at the loan agent end)\nArrow: loan agent -> verified identity\nArrow: loan agent -> final human (manager) review\nArrow: loan agent -> audit log\nArrow: audit log -> submit request",
+  "spec_hash": "078a0740ab31f68d1be827127b0661f9df6053fdbfe1e62fb4763fb0ed381ec8"
+}
