@@ -1,0 +1,330 @@
+{
+  "version": 1,
+  "stack": null,
+  "source_hash": "f804cdc5a70c406ebc4452cb65b0ed241e5b80423657a4c7cc9f48638e4f9fa9",
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "The system shall support an Apply for loan via agent flow.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Flow: Apply for loan via agent",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R2",
+      "text": "The system shall receive loan application input via the api gateway.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: loan application input -> api gateway",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R3",
+      "text": "The api gateway shall forward loan requests to the loan agent.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: api gateway -> loan agent",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R4",
+      "text": "The api gateway shall interface with the ssn vault for SSN handling.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: api gateway -> ssn vault",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R5",
+      "text": "The loan agent shall retrieve supporting data from the db.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: db -> loan agent",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R6",
+      "text": "The loan agent shall obtain identity information from unified identity.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: unified identity -> loan agent",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R7",
+      "text": "The loan agent shall invoke a credit check as part of loan evaluation.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: loan agent -> credit check",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R8",
+      "text": "The loan agent shall route loan decisions to final human (manager) review.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: loan agent -> final human (manager) review",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R9",
+      "text": "The loan agent shall write processing events to the audit log.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: loan agent -> audit log",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R10",
+      "text": "The loan agent shall accept submit request actions.",
+      "category": "functional",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Arrow: submit request -> loan agent",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R11",
+      "text": "The system shall capture and store the applicant name.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: name",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R12",
+      "text": "The system shall handle the applicant ssn as sensitive PII data.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: ssn",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R13",
+      "text": "The system shall capture and store the applicant email.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: email",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R14",
+      "text": "The system shall capture and store the type-loan.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: type-loan",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R15",
+      "text": "The system shall capture and store the loan description.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: description",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R16",
+      "text": "The system shall handle applicant identities.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: identities",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R17",
+      "text": "The system shall associate loan requests with a loan_provider.",
+      "category": "data",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: loan_provider",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R18",
+      "text": "The system shall include an api gateway component.",
+      "category": "deployment",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: api gateway",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R19",
+      "text": "The system shall include a loan agent component.",
+      "category": "deployment",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: loan agent",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R20",
+      "text": "The system shall include an ssn vault component for isolated SSN storage.",
+      "category": "deployment",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: ssn vault",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R21",
+      "text": "The system shall include a db component for persistence.",
+      "category": "deployment",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: db",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R22",
+      "text": "The system shall integrate with a credit check service.",
+      "category": "deployment",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: credit check",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R23",
+      "text": "The system shall integrate with a unified identity service.",
+      "category": "deployment",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: unified identity",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R24",
+      "text": "The system shall provide an audit log store.",
+      "category": "deployment",
+      "evidence": {
+        "kind": "observed",
+        "source_span": "Entity: audit log",
+        "assumption_id": null
+      }
+    },
+    {
+      "id": "R25",
+      "text": "The system shall require authentication before accepting loan application input via the api gateway.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A1"
+      }
+    },
+    {
+      "id": "R26",
+      "text": "The system shall verify requester ownership of identities via unified identity before loan agent processing.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A2"
+      }
+    },
+    {
+      "id": "R27",
+      "text": "The api gateway shall validate loan application input including name, email format, ssn format, type-loan and description and reject invalid input.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A3"
+      }
+    },
+    {
+      "id": "R28",
+      "text": "SSN data shall be stored and retrieved only via the ssn vault with encryption and restricted access, and shall not be stored in plaintext in db or audit log.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A4"
+      }
+    },
+    {
+      "id": "R29",
+      "text": "Only users in an authorized manager role shall complete final human (manager) review decisions.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A5"
+      }
+    },
+    {
+      "id": "R30",
+      "text": "The audit log shall be append-only and record actor, action, and timestamp for loan agent events without storing full SSN.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A6"
+      }
+    },
+    {
+      "id": "R31",
+      "text": "The loan agent invocation of credit check shall use least-privilege credentials and shall not expose full SSN beyond what is required.",
+      "category": "security",
+      "evidence": {
+        "kind": "inferred",
+        "source_span": null,
+        "assumption_id": "A7"
+      }
+    }
+  ],
+  "assumptions": {
+    "A1": "Loan flow handles PII (name, ssn, email) and financial decisions; authentication is implied to prevent anonymous submissions.",
+    "A2": "Presence of identities and unified identity feeding loan agent implies ownership/identity proofing is required to prevent impersonation.",
+    "A3": "External loan application input implies need for input validation to prevent injection and malformed data.",
+    "A4": "SSN is highly sensitive PII and a dedicated ssn vault plus separate db/audit log implies segregation and protection is required.",
+    "A5": "Final human manager review gate implies role-based authorization is needed to prevent unauthorized approvals.",
+    "A6": "Presence of audit log in a PII/financial flow implies tamper-evident accountability logging with PII minimization is required.",
+    "A7": "Credit check access from loan agent handling SSN implies need for authorized, minimized disclosure to external service."
+  },
+  "ignored": [],
+  "coverage_pct": 100.0,
+  "source_excerpt": "Entity: name\nEntity: ssn\nEntity: email\nEntity: type-loan\nEntity: description\nEntity: identities\nEntity: loan_provider\nEntity: api gateway\nEntity: loan agent\nEntity: ssn vault\nEntity: db\nEntity: credit check\nEntity: unified identity\nEntity: final human (manager) review\nEntity: submit request\nEntity: audit log\nFlow: Apply for loan via agent\nArrow: loan application input -> api gateway\nArrow: api gateway -> loan agent\nArrow: api gateway -> ssn vault\nArrow: db -> loan agent\nArrow: unified identity -> loan agent\nArrow: loan agent -> credit check\nArrow: loan agent -> final human (manager) review\nArrow: loan agent -> audit log\nArrow: submit request -> loan agent",
+  "spec_hash": "86a7e3075140e2616c77aae19fbfbca0f9d816a2f6807c7e6e6f3193da0482b9"
+}
