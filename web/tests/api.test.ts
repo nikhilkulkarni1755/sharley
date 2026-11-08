@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, createSpec, friendlyMessage } from "../lib/api";
+import { ApiError, createSpec, downloadProject, friendlyMessage } from "../lib/api";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -38,5 +38,22 @@ describe("call", () => {
     const err = await createSpec("x").catch((e) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect(err.message).toMatch(/cannot reach the API/i);
+  });
+});
+
+describe("downloadProject", () => {
+  it("posts the encoded bank key and returns the zip blob", async () => {
+    const blob = new Blob(["PK"]);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, blob: async () => blob }));
+    await expect(downloadProject("h:0", "abc")).resolves.toBe(blob);
+    const [url, init] = vi.mocked(fetch).mock.calls[0];
+    expect(String(url)).toMatch(/\/api\/banks\/h%3A0\/project$/);
+    expect(init?.body).toBe('{"image_b64":"abc"}');
+  });
+
+  it("omits image_b64 for text specs and maps 404 through friendlyMessage", async () => {
+    respond(404, { detail: "no bank" });
+    await expect(downloadProject("h:0")).rejects.toThrow("Not found: no bank");
+    expect(vi.mocked(fetch).mock.calls[0][1]?.body).toBe("{}");
   });
 });

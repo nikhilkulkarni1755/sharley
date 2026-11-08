@@ -38,6 +38,7 @@ export interface Overrides {
   repoSamples?: (route: Route) => Promise<void> | void;
   repos?: (route: Route) => Promise<void> | void;
   demo?: (route: Route) => Promise<void> | void;
+  project?: (route: Route) => Promise<void> | void;
 }
 
 /** Serves the whole API from the sample fixture; any endpoint can be swapped out per test. */
@@ -50,7 +51,11 @@ export async function mockApi(page: Page, o: Overrides = {}) {
   await page.route("**/api/specs", o.specs ?? ((r) => json(r, demo.spec)));
   await page.route("**/api/specs/image", o.image ?? ((r) => json(r, demo.spec)));
   await page.route("**/api/banks", o.banks ?? ((r) => json(r, demo.bank)));
-  await page.route("**/api/runs", o.runs ?? ((r) => json(r, { run_id: "run1", rejected_paths: [] }, 202)));
+  await page.route(
+    "**/api/banks/*/project",
+    o.project ?? ((r) => r.fulfill({ status: 200, contentType: "application/zip", body: Buffer.from("PK") })),
+  );
+  await page.route("**/api/runs",o.runs ?? ((r) => json(r, { run_id: "run1", rejected_paths: [] }, 202)));
   await page.route(
     "**/api/runs/*/events",
     o.events ?? ((r) => r.fulfill({ status: 200, contentType: "text/event-stream", body: sseBody(demo.events) })),

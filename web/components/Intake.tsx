@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
-import { ApiError, createBank, createSpec, createSpecFromImage } from "../lib/api";
+import { useRef, useState, type DragEvent } from "react";
+import { ApiError, createBank, createSpec, createSpecFromImage, downloadProject } from "../lib/api";
+import { projectFilename, saveBlob } from "../lib/download";
 import { classifyFile, readDataUri, stripDataUri } from "../lib/files";
 import { idleSteps, summaryText, totalMs, untestedIds, withStep, type Step } from "../lib/pipeline";
 import type { Bank, Spec } from "../lib/types";
@@ -30,6 +31,10 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
   const [steps, setSteps] = useState<Step[]>(idleSteps);
   const [bank, setBank] = useState<Bank | null>(null);
   const [missing, setMissing] = useState<string[] | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [zipping, setZipping] = useState(false);
+  const [zipError, setZipError] = useState<string | null>(null);
+  const zipLock = useRef(false);
 
   const setStep = (index: number, step: Step) => setSteps((s) => withStep(s, index, step));
 
@@ -54,10 +59,14 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
     }
   };
 
-  const submitText = (value: string) => run(() => createSpec(value), () => submitText(value));
+  const submitText = (value: string) => {
+    setPhoto(null);
+    return run(() => createSpec(value), () => submitText(value));
+  };
 
   const submitImage = (dataUri: string) => {
     setImageSrc(dataUri);
+    setPhoto(stripDataUri(dataUri));
     return run(() => createSpecFromImage(stripDataUri(dataUri)), () => submitImage(dataUri));
   };
 
@@ -96,13 +105,30 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
     if (file) void ingest(file);
   };
 
+  const download = async (b: Bank) => {
+    if (zipLock.current) return;
+    zipLock.current = true;
+    setZipping(true);
+    setZipError(null);
+    try {
+      saveBlob(await downloadProject(b.key, photo ?? undefined), projectFilename(b));
+    } catch (e) {
+      setZipError((e as Error).message);
+    } finally {
+      zipLock.current = false;
+      setZipping(false);
+    }
+  };
+
   const generate = async (allowPartial = false) => {
     const started = Date.now();
     setBusy(true);
     setError(null);
     setStep(2, { state: "running" });
     try {
-      setBank(await createBank(spec!.spec_hash, allowPartial));
+      const created = await createBank(spec!.spec_hash, allowPartial);
+      setBank(created);
+      if (photo) void download(created);
       setStep(2, { state: "done", ms: Date.now() - started });
       setStep(3, { state: "done" });
     } catch (e) {
@@ -125,6 +151,8 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
     setBank(null);
     setMissing(null);
     setError(null);
+    setZipError(null);
+    setPhoto(null);
     setSteps(idleSteps());
   };
 
@@ -202,6 +230,16 @@ export default function Intake({ onBank }: { onBank: (bank: Bank) => void }) {
             Spec model: {spec.active_provider ?? "unknown"}
             {bank.author && ` · tests written by ${[bank.author.provider, bank.author.model].filter(Boolean).join(" ")}`}
           </p>
+          <div className="row">
+            <button className="primary" disabled={zipping} onClick={() => download(bank)}>
+              {zipping ? "Preparing zip…" : "Download project (.zip)"}
+            </button>
+          </div>
+          <p className="muted">
+            Spec, visible example tests, contract, CLAUDE.md and a starter prompt (and your photo, if you used one). Hidden tests are never included.
+          </p>
+          <p className="muted">Unzip, run <code>claude</code> in the folder, then paste PROMPT.md.</p>
+          {zipError && <ErrorNote message={zipError} onRetry={zipping ? undefined : () => download(bank)} />}
         </SummaryCard>
       )}
       {spec && <SpecView spec={spec} busy={busy} onGenerate={() => generate()} />}

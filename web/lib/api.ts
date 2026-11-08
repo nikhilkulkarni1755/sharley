@@ -27,7 +27,7 @@ export function friendlyMessage(status: number, detail: unknown): string {
   return `Request failed (${status}): ${text}`;
 }
 
-async function call<T>(path: string, body?: unknown): Promise<T> {
+async function request(path: string, body?: unknown): Promise<Response> {
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {
@@ -42,8 +42,10 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
     const payload = await res.json().catch(() => ({}));
     throw new ApiError(friendlyMessage(res.status, payload.detail), res.status >= 500 && !isSpendCap(payload.detail), payload.detail);
   }
-  return res.json();
+  return res;
 }
+
+const call = async <T>(path: string, body?: unknown): Promise<T> => (await request(path, body)).json();
 
 export const getHealth = () => call<Health>("/api/health");
 export const getSamples = () => call<Sample[]>("/api/samples");
@@ -52,6 +54,8 @@ export const createSpec = (text: string) => call<Spec>("/api/specs", { text });
 export const createSpecFromImage = (image_b64: string) => call<Spec>("/api/specs/image", { image_b64 });
 export const createBank = (spec_hash: string, allow_partial = false) =>
   call<Bank>("/api/banks", { spec_hash, stack: STACK, seed: 0, allow_partial });
+export const downloadProject = async (bankKey: string, image_b64?: string): Promise<Blob> =>
+  (await request(`/api/banks/${encodeURIComponent(bankKey)}/project`, { image_b64 })).blob();
 export const startRun = (req: RunRequest) =>
   call<{ run_id: string; rejected_paths: string[] }>("/api/runs", req);
 
